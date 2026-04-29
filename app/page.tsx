@@ -6,22 +6,53 @@ type Article = {
 const categoryMeta: Record<
   string,
   {
+    label: string;
     href: string;
     description: string;
-    iconType: "logo" | "star";
+    iconType: "logo" | "star" | "gear" | "document";
+    accent: string;
+    background: string;
   }
 > = {
   "Product Guide": {
+    label: "Product Guide",
     href: "/product-guide",
     description:
       "Platform functionality, UX/UI logic, identity, billing, DSP, and product cases.",
     iconType: "logo",
+    accent: "#44cfbd",
+    background:
+      "linear-gradient(135deg, rgba(68,207,189,0.16), rgba(255,255,255,0.98) 58%, rgba(68,207,189,0.06))",
   },
   "Market Analysis": {
+    label: "Market Analysis",
     href: "/market-analysis",
     description:
       "Market context, identity strategies, regulatory shifts, and myGaru positioning.",
     iconType: "star",
+    accent: "#44cfbd",
+    background:
+      "linear-gradient(135deg, rgba(17,17,17,0.04), rgba(255,255,255,0.98) 55%, rgba(92,70,180,0.10))",
+  },
+  "Integrations Guide": {
+    label: "Integrations Guide",
+    href: "/integrations-guide",
+    description:
+      "Platform deployment, integrations, and technical setup across partner environments.",
+    iconType: "gear",
+    accent: "#44cfbd",
+    background:
+      "linear-gradient(135deg, rgba(92,70,180,0.10), rgba(255,255,255,0.98) 58%, rgba(68,207,189,0.08))",
+  },
+  "Legal documents": {
+    label: "Legal Documents",
+    href: "/legal-documents",
+    description:
+      "Legal framework, compliance, and data protection documentation for platform usage.",
+    iconType: "document",
+    accent: "#44cfbd",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,1), rgba(247,246,242,0.95) 58%, rgba(68,207,189,0.07))",
   },
 };
 
@@ -43,7 +74,9 @@ async function getArticles(): Promise<Article[]> {
       body: JSON.stringify({
         filter: {
           property: "Status",
-          select: { equals: "Ready" },
+          select: {
+            equals: "Ready",
+          },
         },
       }),
       cache: "no-store",
@@ -51,6 +84,7 @@ async function getArticles(): Promise<Article[]> {
   );
 
   const data = await response.json();
+
   if (!response.ok) return [];
 
   return data.results.map((item: any) => ({
@@ -77,13 +111,56 @@ export default async function HomePage() {
     <main
       style={{
         fontFamily: "Ubuntu, Arial, sans-serif",
-        background: "#f4f3ef",
+        background:
+          "radial-gradient(circle at top left, rgba(68,207,189,0.12), transparent 34%), radial-gradient(circle at top right, rgba(92,70,180,0.10), transparent 32%), #f4f3ef",
         minHeight: "100vh",
         color: "#111",
       }}
     >
-      {/* HEADER */}
-      <header style={{ padding: "18px 72px", display: "flex", justifyContent: "center" }}>
+      <style>{`
+        .home-card {
+          transform: translateY(0);
+          transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+        }
+
+        .home-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 22px 46px rgba(0,0,0,0.11);
+          border-color: rgba(68,207,189,0.42);
+        }
+
+        .home-card:hover .card-arrow {
+          transform: translateX(4px);
+        }
+
+        .card-arrow {
+          display: inline-block;
+          transition: transform 180ms ease;
+        }
+
+        .welcome-panel {
+          animation: fadeUp 420ms ease both;
+        }
+
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+
+      <header
+        style={{
+          padding: "18px 72px",
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
         <div
           style={{
             width: "100%",
@@ -95,10 +172,24 @@ export default async function HomePage() {
             justifyContent: "space-between",
             alignItems: "center",
             boxShadow: "0 14px 38px rgba(0,0,0,0.10)",
+            backdropFilter: "blur(10px)",
           }}
         >
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: 14, color: "#111", textDecoration: "none" }}>
-            <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 42, height: 42 }} />
+          <a
+            href="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              textDecoration: "none",
+              color: "#111",
+            }}
+          >
+            <img
+              src="/mygaru-icon.png"
+              alt="myGaru"
+              style={{ width: 42, height: 42 }}
+            />
             <strong style={{ fontSize: 28 }}>myGaru</strong>
           </a>
 
@@ -120,29 +211,49 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {/* CONTENT */}
-      <section style={{ maxWidth: 980, margin: "0 auto", padding: "42px 24px 80px" }}>
-
-        {/* SMALL BANNER */}
+      <section
+        style={{
+          maxWidth: 1040,
+          margin: "0 auto",
+          padding: "42px 24px 80px",
+        }}
+      >
         <div
+          className="welcome-panel"
           style={{
-            background: "#ffffff",
+            background:
+              "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,255,255,0.82) 55%, rgba(68,207,189,0.10))",
             border: "1px solid #e4e1d8",
-            borderRadius: 18,
-            padding: "18px 22px",
+            borderRadius: 24,
+            padding: "22px 26px",
             marginBottom: 28,
-            boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+            boxShadow: "0 10px 28px rgba(0,0,0,0.06)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+              marginBottom: 6,
+              letterSpacing: "-0.2px",
+            }}
+          >
             Welcome to the myGaru Help Center
           </div>
-          <div style={{ fontSize: 14, color: "#666" }}>
-            Find product documentation, market analysis, and platform guidance in one place.
+
+          <div
+            style={{
+              fontSize: 15,
+              color: "#555",
+              lineHeight: 1.55,
+              maxWidth: 760,
+            }}
+          >
+            Find product documentation, market analysis, integration guidance,
+            and legal materials in one internal knowledge space.
           </div>
         </div>
 
-        {/* CARDS */}
         <div
           style={{
             display: "grid",
@@ -158,64 +269,121 @@ export default async function HomePage() {
               <a
                 key={category}
                 href={meta.href}
+                className="home-card"
                 style={{
+                  position: "relative",
+                  overflow: "hidden",
                   textDecoration: "none",
                   color: "#111",
-                  background: "white",
+                  background: meta.background,
                   border: "1px solid #e4e1d8",
-                  borderRadius: 24,
-                  padding: 32,
+                  borderRadius: 28,
+                  padding: 34,
                   boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
                   display: "block",
+                  minHeight: 250,
                 }}
               >
                 <div
                   style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 16,
-                    background: meta.iconType === "logo" ? "#44cfbd" : "#111",
+                    position: "absolute",
+                    right: -42,
+                    top: -42,
+                    width: 150,
+                    height: 150,
+                    borderRadius: "50%",
+                    background: "rgba(68,207,189,0.10)",
+                  }}
+                />
+
+                <div
+                  style={{
+                    position: "relative",
+                    width: 58,
+                    height: 58,
+                    borderRadius: 18,
+                    background:
+                      meta.iconType === "logo"
+                        ? "#44cfbd"
+                        : meta.iconType === "star"
+                        ? "#111"
+                        : "#f1f0ec",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    marginBottom: 22,
+                    marginBottom: 24,
+                    boxShadow: "0 10px 22px rgba(0,0,0,0.08)",
                   }}
                 >
                   {meta.iconType === "logo" ? (
-                    <img src="/mygaru-icon.png" alt="" style={{ width: 34, height: 34 }} />
+                    <img
+                      src="/mygaru-icon.png"
+                      alt=""
+                      style={{ width: 34, height: 34 }}
+                    />
+                  ) : meta.iconType === "star" ? (
+                    <span style={{ color: "#44cfbd", fontSize: 27 }}>✦</span>
+                  ) : meta.iconType === "gear" ? (
+                    <span style={{ fontSize: 26 }}>⚙️</span>
                   ) : (
-                    <span style={{ color: "#44cfbd", fontSize: 26 }}>✦</span>
+                    <span style={{ fontSize: 25 }}>📄</span>
                   )}
                 </div>
 
-                <h2 style={{ fontSize: 28, margin: "0 0 12px" }}>
-                  {category}
+                <h2
+                  style={{
+                    position: "relative",
+                    fontSize: 29,
+                    lineHeight: 1.15,
+                    margin: "0 0 12px",
+                    letterSpacing: "-0.45px",
+                  }}
+                >
+                  {meta.label}
                 </h2>
 
-                <p style={{ color: "#555", fontSize: 16, lineHeight: 1.55, margin: "0 0 24px" }}>
+                <p
+                  style={{
+                    position: "relative",
+                    color: "#4f4f4f",
+                    fontSize: 16,
+                    lineHeight: 1.55,
+                    margin: "0 0 26px",
+                    maxWidth: 520,
+                  }}
+                >
                   {meta.description}
                 </p>
 
-                <p style={{ color: "#168f82", fontWeight: 700, fontSize: 16, margin: 0 }}>
-                  {count} {count === 1 ? "document" : "documents"} →
+                <p
+                  style={{
+                    position: "relative",
+                    color: "#168f82",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    margin: 0,
+                  }}
+                >
+                  {count} {count === 1 ? "document" : "documents"}{" "}
+                  <span className="card-arrow">→</span>
                 </p>
               </a>
             );
           })}
         </div>
 
-        {/* SEARCH */}
         <div
           style={{
-            maxWidth: 420,
-            margin: "34px auto 0",
-            background: "white",
+            maxWidth: 460,
+            margin: "36px auto 0",
+            background: "rgba(255,255,255,0.9)",
             border: "1px solid #e4e1d8",
-            borderRadius: 16,
-            padding: "11px 16px",
+            borderRadius: 18,
+            padding: "12px 17px",
             color: "#777",
             fontSize: 14,
             boxShadow: "0 8px 22px rgba(0,0,0,0.04)",
+            backdropFilter: "blur(8px)",
           }}
         >
           🔍 Search will be added later
