@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 type Article = {
   id: string;
   title: string;
@@ -7,6 +9,8 @@ type Article = {
 };
 
 type NotionBlock = any;
+
+const LOGO_SRC = "/myGaru_logo_black.png";
 
 function getPlainText(richText: any[] = []) {
   return richText.map((text) => text.plain_text).join("");
@@ -112,7 +116,7 @@ async function getBlocksWithChildren(pageId: string): Promise<NotionBlock[]> {
 function renderInlineText(richText: any[] = []) {
   return richText.map((text, index) => {
     const annotations = text.annotations || {};
-    let element: React.ReactNode = text.plain_text;
+    let element: ReactNode = text.plain_text;
 
     if (annotations.bold) element = <strong>{element}</strong>;
     if (annotations.italic) element = <em>{element}</em>;
@@ -156,14 +160,14 @@ function renderInlineText(richText: any[] = []) {
 }
 
 function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
-  const elements: React.ReactNode[] = [];
+  const elements: ReactNode[] = [];
   let i = 0;
 
   while (i < blocks.length) {
     const block = blocks[i];
 
     if (block.type === "bulleted_list_item") {
-      const items: React.ReactNode[] = [];
+      const items: ReactNode[] = [];
 
       while (i < blocks.length && blocks[i].type === "bulleted_list_item") {
         const current = blocks[i];
@@ -208,7 +212,7 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
     }
 
     if (block.type === "numbered_list_item") {
-      const items: React.ReactNode[] = [];
+      const items: ReactNode[] = [];
 
       while (i < blocks.length && blocks[i].type === "numbered_list_item") {
         const current = blocks[i];
@@ -608,24 +612,19 @@ export default async function ArticlePage({
         color: "#111",
       }}
     >
-      <header
+      <div
         style={{
-          padding: "18px 72px",
-          display: "flex",
-          justifyContent: "center",
+          background:
+            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 54%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
+          padding: "22px 60px 94px",
         }}
       >
-        <div
+        <header
           style={{
-            width: "100%",
-            maxWidth: 1180,
-            background: "rgba(255,255,255,0.94)",
-            borderRadius: 999,
-            padding: "12px 22px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            boxShadow: "0 14px 38px rgba(0,0,0,0.10)",
+            marginBottom: 40,
           }}
         >
           <a
@@ -633,17 +632,18 @@ export default async function ArticlePage({
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 14,
-              color: "#111",
               textDecoration: "none",
             }}
           >
             <img
-              src="/mygaru-icon.png"
+              src={LOGO_SRC}
               alt="myGaru"
-              style={{ width: 42, height: 42 }}
+              style={{
+                height: 42,
+                width: "auto",
+                display: "block",
+              }}
             />
-            <strong style={{ fontSize: 28 }}>myGaru</strong>
           </a>
 
           <a
@@ -652,24 +652,76 @@ export default async function ArticlePage({
               background: "#111",
               color: "white",
               textDecoration: "none",
-              padding: "13px 24px",
+              padding: "12px 22px",
               borderRadius: 999,
               fontWeight: 700,
             }}
           >
             Help Center Home
           </a>
+        </header>
+
+        <div
+          style={{
+            maxWidth: 980,
+            margin: "0 auto",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#111",
+              marginBottom: 14,
+              opacity: 0.72,
+            }}
+          >
+            {article.category}
+          </div>
+
+          <h1
+            style={{
+              fontSize: 52,
+              lineHeight: 1.08,
+              margin: "0 0 16px",
+              letterSpacing: "-1.4px",
+              maxWidth: 900,
+            }}
+          >
+            {article.title}
+          </h1>
+
+          {article.shortAnswer && (
+            <p
+              style={{
+                fontSize: 18,
+                lineHeight: 1.5,
+                maxWidth: 820,
+                margin: 0,
+                color: "#111",
+                fontWeight: 500,
+              }}
+            >
+              {article.shortAnswer}
+            </p>
+          )}
         </div>
-      </header>
+      </div>
 
       <section
         style={{
           maxWidth: 980,
-          margin: "0 auto",
-          padding: "40px 24px 90px",
+          margin: "-54px auto 0",
+          padding: "0 24px 90px",
         }}
       >
-        <div style={{ fontSize: 14, color: "#777", marginBottom: 24 }}>
+        <div
+          style={{
+            fontSize: 14,
+            color: "#777",
+            marginBottom: 18,
+          }}
+        >
           <a href="/" style={{ color: "#777", textDecoration: "none" }}>
             Home
           </a>{" "}
@@ -686,41 +738,9 @@ export default async function ArticlePage({
             border: "1px solid #e4e1d8",
             borderRadius: 30,
             padding: "44px 52px",
-            boxShadow: "0 14px 42px rgba(0,0,0,0.07)",
+            boxShadow: "0 16px 42px rgba(0,0,0,0.10)",
           }}
         >
-          <h1
-            style={{
-              fontSize: 40,
-              lineHeight: 1.15,
-              margin: "0 0 18px",
-              letterSpacing: "-0.8px",
-            }}
-          >
-            {article.title}
-          </h1>
-
-          {article.shortAnswer && (
-            <p
-              style={{
-                fontSize: 19,
-                lineHeight: 1.6,
-                color: "#555",
-                margin: "0 0 30px",
-              }}
-            >
-              {article.shortAnswer}
-            </p>
-          )}
-
-          <hr
-            style={{
-              border: "none",
-              borderTop: "1px solid #eee",
-              margin: "26px 0",
-            }}
-          />
-
           <div>{renderNestedBlocks(blocks)}</div>
 
           <div
