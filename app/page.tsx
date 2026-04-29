@@ -1,97 +1,4 @@
-type Article = {
-  title: string;
-  category: string;
-  shortAnswer: string;
-  slug: string;
-  order: number;
-};
-
-const categoryMeta: Record<
-  string,
-  {
-    href: string;
-    description: string;
-    iconType: "logo" | "star";
-  }
-> = {
-  "Product Guide": {
-    href: "/product-guide",
-    description: "Core concepts, platform modules, and telecom-powered identity logic.",
-    iconType: "logo",
-  },
-  "Market Analysis": {
-    href: "/market-analysis",
-    description: "Identity solutions, AdTech market shifts, and myGaru positioning.",
-    iconType: "star",
-  },
-};
-
-async function getArticles(): Promise<Article[]> {
-  const token = process.env.NOTION_TOKEN;
-  const databaseId = process.env.NOTION_DATABASE_ID;
-
-  if (!token || !databaseId) return [];
-
-  const response = await fetch(
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Notion-Version": "2022-06-28",
-      },
-      body: JSON.stringify({
-        filter: {
-          property: "Status",
-          status: {
-            equals: "Ready",
-          },
-        },
-        sorts: [
-          {
-            property: "Order",
-            direction: "ascending",
-          },
-        ],
-      }),
-      cache: "no-store",
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    console.error("Notion API error:", data);
-    return [];
-  }
-
-  return data.results.map((item: any) => ({
-    title: item.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    category: item.properties?.Category?.select?.name || "Uncategorised",
-    shortAnswer:
-      item.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
-    slug: item.properties?.Slug?.rich_text?.[0]?.plain_text || "",
-    order: item.properties?.Order?.number || 999,
-  }));
-}
-
-export default async function Home() {
-  const articles = await getArticles();
-
-  const groupedArticles = articles.reduce<Record<string, Article[]>>(
-    (acc, article) => {
-      if (!acc[article.category]) acc[article.category] = [];
-      acc[article.category].push(article);
-      return acc;
-    },
-    {}
-  );
-
-  const categories = Object.keys(categoryMeta).filter(
-    (category) => groupedArticles[category]?.length
-  );
-
+export default function HomePage() {
   return (
     <main
       style={{
@@ -101,13 +8,8 @@ export default async function Home() {
         color: "#111",
       }}
     >
-      <header
-        style={{
-          padding: "18px 72px",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
+      {/* HEADER */}
+      <header style={{ padding: "18px 72px", display: "flex", justifyContent: "center" }}>
         <div
           style={{
             width: "100%",
@@ -121,26 +23,13 @@ export default async function Home() {
             boxShadow: "0 14px 38px rgba(0,0,0,0.10)",
           }}
         >
-          <a
-            href="/"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              color: "#111",
-              textDecoration: "none",
-            }}
-          >
-            <img
-              src="/mygaru-icon.png"
-              alt="myGaru"
-              style={{ width: 42, height: 42 }}
-            />
+          <a href="/" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", color: "#111" }}>
+            <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 42, height: 42 }} />
             <strong style={{ fontSize: 28 }}>myGaru</strong>
           </a>
 
           <a
-            href="https://mygaru.com/"
+            href="/"
             style={{
               background: "#111",
               color: "white",
@@ -155,177 +44,123 @@ export default async function Home() {
         </div>
       </header>
 
-      <section
-        style={{
-          maxWidth: 1180,
-          margin: "0 auto",
-          padding: "28px 32px 34px",
-        }}
-      >
+      {/* HERO (уменьшенный) */}
+      <section style={{ maxWidth: 980, margin: "0 auto", padding: "28px 24px 20px" }}>
         <div
           style={{
-            borderRadius: 34,
-            padding: "34px 46px",
+            borderRadius: 28,
+            padding: "28px 34px",
             background:
-              "linear-gradient(135deg, rgba(68,207,189,0.16), rgba(255,255,255,0.94) 45%, rgba(92,70,180,0.14))",
-            boxShadow: "0 16px 44px rgba(0,0,0,0.07)",
-            position: "relative",
-            overflow: "hidden",
+              "linear-gradient(135deg, rgba(68,207,189,0.14), rgba(255,255,255,0.96) 52%, rgba(92,70,180,0.10))",
+            border: "1px solid #e4e1d8",
+            boxShadow: "0 12px 34px rgba(0,0,0,0.06)",
           }}
         >
+          <h1 style={{ fontSize: 40, marginBottom: 12 }}>
+            Search for answers or browse by topic
+          </h1>
+
+          <p style={{ color: "#555", fontSize: 17, marginBottom: 18 }}>
+            Practical guidance on the myGaru platform, telecom-powered identity,
+            data collaboration, and audience activation.
+          </p>
+
           <div
             style={{
-              position: "absolute",
-              right: -70,
-              top: -90,
-              width: 250,
-              height: 250,
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle, rgba(68,207,189,0.42), transparent 65%)",
-              filter: "blur(10px)",
+              background: "#f7f6f2",
+              borderRadius: 16,
+              padding: "14px 18px",
+              color: "#777",
+              fontSize: 15,
             }}
-          />
-
-          <div style={{ position: "relative", maxWidth: 820 }}>
-            <p
-              style={{
-                color: "#168f82",
-                fontWeight: 700,
-                letterSpacing: 1.2,
-                textTransform: "uppercase",
-                fontSize: 13,
-                margin: "0 0 12px",
-              }}
-            >
-              myGaru Knowledge Base
-            </p>
-
-            <h1
-              style={{
-                fontSize: 42,
-                lineHeight: 1.08,
-                margin: "0 0 16px",
-                letterSpacing: "-1px",
-              }}
-            >
-              Search for answers or browse by topic
-            </h1>
-
-            <p
-              style={{
-                fontSize: 18,
-                lineHeight: 1.5,
-                color: "#555",
-                maxWidth: 720,
-                margin: "0 0 24px",
-              }}
-            >
-              Practical guidance on the myGaru platform, telecom-powered identity,
-              data collaboration, and audience activation.
-            </p>
-
-            <div
-              style={{
-                maxWidth: 640,
-                background: "white",
-                border: "1px solid #dedbd2",
-                borderRadius: 18,
-                padding: "16px 22px",
-                fontSize: 18,
-                color: "#777",
-                boxShadow: "0 12px 30px rgba(0,0,0,0.07)",
-              }}
-            >
-              🔍 Search for articles...
-            </div>
+          >
+            🔍 Search for articles...
           </div>
         </div>
       </section>
 
-      <section
-        style={{
-          maxWidth: 1180,
-          margin: "0 auto",
-          padding: "0 32px 70px",
-        }}
-      >
-        <h2 style={{ fontSize: 32, margin: "0 0 24px" }}>Browse by topic</h2>
+      {/* CARDS */}
+      <section style={{ maxWidth: 980, margin: "0 auto", padding: "12px 24px 80px" }}>
+        <h2 style={{ fontSize: 28, marginBottom: 20 }}>Browse by topic</h2>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(260px, 1fr))",
-            gap: 28,
+            gridTemplateColumns: "1fr 1fr",
+            gap: 24,
           }}
         >
-          {categories.map((category) => {
-            const meta = categoryMeta[category];
-            const count = groupedArticles[category]?.length || 0;
+          {/* PRODUCT GUIDE */}
+          <a
+            href="/product-guide"
+            style={{
+              textDecoration: "none",
+              color: "#111",
+              background: "white",
+              border: "1px solid #e4e1d8",
+              borderRadius: 24,
+              padding: 28,
+              boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
+              display: "block",
+            }}
+          >
+            <div
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: 16,
+                background: "#44cfbd",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 18,
+              }}
+            >
+              <img src="/mygaru-icon.png" alt="" style={{ width: 34 }} />
+            </div>
 
-            return (
-              <a
-                key={category}
-                href={meta.href}
-                style={{
-                  display: "block",
-                  minHeight: 215,
-                  padding: 32,
-                  borderRadius: 30,
-                  background:
-                    meta.iconType === "star"
-                      ? "linear-gradient(135deg, rgba(68,207,189,0.14), rgba(255,255,255,1) 45%, rgba(92,70,180,0.16))"
-                      : "white",
-                  border: "1px solid #e4e1d8",
-                  textDecoration: "none",
-                  color: "#111",
-                  boxShadow: "0 14px 40px rgba(0,0,0,0.07)",
-                }}
-              >
-                <div
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 20,
-                    background: meta.iconType === "logo" ? "#44cfbd" : "#111",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 26,
-                  }}
-                >
-                  {meta.iconType === "logo" ? (
-                    <img
-                      src="/mygaru-icon.png"
-                      alt=""
-                      style={{ width: 40, height: 40 }}
-                    />
-                  ) : (
-                    <span style={{ color: "#44cfbd", fontSize: 30 }}>✦</span>
-                  )}
-                </div>
+            <h3 style={{ fontSize: 22, marginBottom: 10 }}>Product Guide</h3>
 
-                <h3 style={{ fontSize: 27, margin: "0 0 12px" }}>
-                  {category}
-                </h3>
+            <p style={{ color: "#555", fontSize: 15 }}>
+              Core concepts, platform modules, and telecom-powered identity logic.
+            </p>
+          </a>
 
-                <p
-                  style={{
-                    color: "#666",
-                    fontSize: 17,
-                    lineHeight: 1.5,
-                    marginBottom: 26,
-                  }}
-                >
-                  {meta.description}
-                </p>
+          {/* MARKET ANALYSIS */}
+          <a
+            href="/market-analysis"
+            style={{
+              textDecoration: "none",
+              color: "#111",
+              background: "white",
+              border: "1px solid #e4e1d8",
+              borderRadius: 24,
+              padding: 28,
+              boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
+              display: "block",
+            }}
+          >
+            <div
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: 16,
+                background: "#111",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 18,
+              }}
+            >
+              <span style={{ color: "#44cfbd", fontSize: 26 }}>✦</span>
+            </div>
 
-                <p style={{ color: "#168f82", fontWeight: 700, fontSize: 17 }}>
-                  {count} {count === 1 ? "article" : "articles"} →
-                </p>
-              </a>
-            );
-          })}
+            <h3 style={{ fontSize: 22, marginBottom: 10 }}>Market Analysis</h3>
+
+            <p style={{ color: "#555", fontSize: 15 }}>
+              Identity solutions, AdTech trends, and myGaru positioning.
+            </p>
+          </a>
         </div>
       </section>
     </main>
