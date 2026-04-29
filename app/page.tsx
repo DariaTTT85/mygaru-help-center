@@ -13,12 +13,12 @@ const categoryMeta: Record<
 > = {
   "Product Guide": {
     href: "/product-guide",
-    description: "Core concepts, platform modules, and telecom-powered identity logic.",
+    description: "Platform functionality, UX/UI logic, identity, billing, DSP, and product cases.",
     iconType: "logo",
   },
   "Market Analysis": {
     href: "/market-analysis",
-    description: "Identity solutions, AdTech market shifts, and myGaru positioning.",
+    description: "Market context, identity strategies, regulatory shifts, and myGaru positioning.",
     iconType: "star",
   },
 };
@@ -129,31 +129,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <section style={{ maxWidth: 980, margin: "0 auto", padding: "34px 24px 80px" }}>
-        <div style={{ marginBottom: 28 }}>
-          <p
-            style={{
-              color: "#168f82",
-              fontWeight: 700,
-              letterSpacing: 1.1,
-              textTransform: "uppercase",
-              fontSize: 13,
-              margin: "0 0 10px",
-            }}
-          >
-            myGaru Knowledge Base
-          </p>
-
-          <h1 style={{ fontSize: 36, lineHeight: 1.15, margin: "0 0 10px" }}>
-            Browse documentation by topic
-          </h1>
-
-          <p style={{ color: "#555", fontSize: 16, lineHeight: 1.55, margin: 0, maxWidth: 720 }}>
-            Practical guidance on the myGaru platform, identity, data collaboration,
-            and audience activation.
-          </p>
-        </div>
-
+      <section style={{ maxWidth: 980, margin: "0 auto", padding: "42px 24px 80px" }}>
         <div
           style={{
             display: "grid",
@@ -175,21 +151,21 @@ export default async function HomePage() {
                   background: "white",
                   border: "1px solid #e4e1d8",
                   borderRadius: 24,
-                  padding: 28,
+                  padding: 32,
                   boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
                   display: "block",
                 }}
               >
                 <div
                   style={{
-                    width: 54,
-                    height: 54,
+                    width: 56,
+                    height: 56,
                     borderRadius: 16,
                     background: meta.iconType === "logo" ? "#44cfbd" : "#111",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    marginBottom: 18,
+                    marginBottom: 22,
                   }}
                 >
                   {meta.iconType === "logo" ? (
@@ -199,9 +175,9 @@ export default async function HomePage() {
                   )}
                 </div>
 
-                <h2 style={{ fontSize: 24, margin: "0 0 10px" }}>{category}</h2>
+                <h1 style={{ fontSize: 28, margin: "0 0 12px" }}>{category}</h1>
 
-                <p style={{ color: "#555", fontSize: 15, lineHeight: 1.55, margin: "0 0 22px" }}>
+                <p style={{ color: "#555", fontSize: 16, lineHeight: 1.55, margin: "0 0 24px" }}>
                   {meta.description}
                 </p>
 
@@ -216,7 +192,7 @@ export default async function HomePage() {
         <div
           style={{
             maxWidth: 420,
-            margin: "30px auto 0",
+            margin: "34px auto 0",
             background: "white",
             border: "1px solid #e4e1d8",
             borderRadius: 16,
