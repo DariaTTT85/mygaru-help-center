@@ -23,26 +23,11 @@ async function getProductGuideArticles(): Promise<Article[]> {
       body: JSON.stringify({
         filter: {
           and: [
-            {
-              property: "Status",
-              select: {
-                equals: "Ready",
-              },
-            },
-            {
-              property: "Category",
-              select: {
-                equals: "Product Guide",
-              },
-            },
+            { property: "Status", select: { equals: "Ready" } },
+            { property: "Category", select: { equals: "Product Guide" } },
           ],
         },
-        sorts: [
-          {
-            property: "Order",
-            direction: "ascending",
-          },
-        ],
+        sorts: [{ property: "Order", direction: "ascending" }],
       }),
       cache: "no-store",
     }
@@ -73,13 +58,7 @@ export default async function ProductGuide() {
         color: "#111",
       }}
     >
-      <header
-        style={{
-          padding: "18px 72px",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
+      <header style={{ padding: "18px 72px", display: "flex", justifyContent: "center" }}>
         <div
           style={{
             width: "100%",
@@ -93,16 +72,7 @@ export default async function ProductGuide() {
             boxShadow: "0 14px 38px rgba(0,0,0,0.10)",
           }}
         >
-          <a
-            href="/"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              color: "#111",
-              textDecoration: "none",
-            }}
-          >
+          <a href="/" style={{ display: "flex", alignItems: "center", gap: 14, color: "#111", textDecoration: "none" }}>
             <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 42, height: 42 }} />
             <strong style={{ fontSize: 28 }}>myGaru</strong>
           </a>
@@ -123,65 +93,57 @@ export default async function ProductGuide() {
         </div>
       </header>
 
-      <section style={{ maxWidth: 980, margin: "0 auto", padding: "44px 24px 80px" }}>
+      <section style={{ maxWidth: 980, margin: "0 auto", padding: "36px 24px 80px" }}>
         <div
           style={{
-            borderRadius: 34,
-            padding: "38px 42px",
-            marginBottom: 34,
+            borderRadius: 28,
+            padding: "28px 34px",
+            marginBottom: 28,
             background:
-              "linear-gradient(135deg, rgba(68,207,189,0.22), rgba(255,255,255,0.94) 48%, rgba(90,65,165,0.13))",
-            boxShadow: "0 18px 52px rgba(0,0,0,0.08)",
+              "linear-gradient(135deg, rgba(68,207,189,0.14), rgba(255,255,255,0.96) 52%, rgba(92,70,180,0.10))",
+            border: "1px solid #e4e1d8",
+            boxShadow: "0 12px 34px rgba(0,0,0,0.06)",
           }}
         >
-          <div
-            style={{
-              width: 68,
-              height: 68,
-              borderRadius: 22,
-              background: "#44cfbd",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 22,
-            }}
-          >
-            <img src="/mygaru-icon.png" alt="" style={{ width: 46, height: 46 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <div
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: 18,
+                background: "#44cfbd",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <img src="/mygaru-icon.png" alt="" style={{ width: 36, height: 36 }} />
+            </div>
+
+            <div>
+              <h1 style={{ fontSize: 38, margin: "0 0 8px", letterSpacing: "-0.7px" }}>
+                Product Guide
+              </h1>
+
+              <p style={{ color: "#555", fontSize: 17, lineHeight: 1.5, maxWidth: 720, margin: 0 }}>
+                Start here to understand the myGaru platform, its core components,
+                and the logic behind telecom-powered identity.
+              </p>
+            </div>
           </div>
-
-          <p
-            style={{
-              color: "#168f82",
-              fontWeight: 700,
-              letterSpacing: 1,
-              textTransform: "uppercase",
-              fontSize: 13,
-              marginBottom: 10,
-            }}
-          >
-            Collection
-          </p>
-
-          <h1 style={{ fontSize: 48, margin: "0 0 14px", letterSpacing: "-1px" }}>
-            Product Guide
-          </h1>
-
-          <p style={{ color: "#555", fontSize: 19, lineHeight: 1.6, maxWidth: 720 }}>
-            Start here to understand the myGaru platform, its core components,
-            and the logic behind telecom-powered identity.
-          </p>
         </div>
 
         <div
           style={{
             background: "white",
             border: "1px solid #e4e1d8",
-            borderRadius: 30,
-            padding: "12px 36px",
-            boxShadow: "0 18px 50px rgba(0,0,0,0.07)",
+            borderRadius: 28,
+            padding: "10px 34px",
+            boxShadow: "0 14px 42px rgba(0,0,0,0.07)",
           }}
         >
-          <h2 style={{ fontSize: 26, margin: "26px 0 10px" }}>
+          <h2 style={{ fontSize: 25, margin: "24px 0 8px" }}>
             Get started with myGaru
           </h2>
 
@@ -194,7 +156,7 @@ export default async function ProductGuide() {
                 alignItems: "center",
                 justifyContent: "space-between",
                 gap: 30,
-                padding: "26px 0",
+                padding: "24px 0",
                 borderTop: index === 0 ? "none" : "1px solid #eee",
                 textDecoration: "none",
                 color: "#111",
