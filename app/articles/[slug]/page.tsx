@@ -62,15 +62,15 @@ async function getArticle(slug: string): Promise<Article | null> {
   };
 }
 
-async function getBlocks(pageId: string): Promise<NotionBlock[]> {
+async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
   let blocks: NotionBlock[] = [];
   let cursor: string | undefined = undefined;
   let hasMore = true;
 
   while (hasMore) {
     const url = cursor
-      ? `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100&start_cursor=${cursor}`
-      : `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`;
+      ? `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100&start_cursor=${cursor}`
+      : `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`;
 
     const data = await notionRequest(url);
 
@@ -82,6 +82,87 @@ async function getBlocks(pageId: string): Promise<NotionBlock[]> {
   return blocks;
 }
 
+async function getBlocksWithChildren(pageId: string): Promise<NotionBlock[]> {
+  const rootBlocks = await getChildBlocks(pageId);
+
+  async function attachChildren(blocks: NotionBlock[]): Promise<NotionBlock[]> {
+    return Promise.all(
+      blocks.map(async (block) => {
+        if (block.has_children) {
+          const children = await getChildBlocks(block.id);
+          block.children = await attachChildren(children);
+        }
+
+        return block;
+      })
+    );
+  }
+
+  return attachChildren(rootBlocks);
+}
+
+function renderInlineText(richText: any[] = []) {
+  return richText.map((text, index) => {
+    const content = text.plain_text;
+    const annotations = text.annotations || {};
+
+    let element: React.ReactNode = content;
+
+    if (annotations.bold) {
+      element = <strong key={index}>{element}</strong>;
+    }
+
+    if (annotations.italic) {
+      element = <em key={index}>{element}</em>;
+    }
+
+    if (annotations.code) {
+      element = (
+        <code
+          key={index}
+          style={{
+            background: "#f1f0ec",
+            borderRadius: 6,
+            padding: "2px 6px",
+            fontSize: "0.92em",
+          }}
+        >
+          {element}
+        </code>
+      );
+    }
+
+    if (text.href) {
+      element = (
+        <a
+          key={index}
+          href={text.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "#168f82" }}
+        >
+          {element}
+        </a>
+      );
+    }
+
+    return <span key={index}>{element}</span>;
+  });
+}
+
+function renderListItem(block: NotionBlock) {
+  const value = block[block.type];
+
+  return (
+    <>
+      {renderInlineText(value.rich_text)}
+      {block.children?.length ? (
+        <div style={{ marginTop: 8 }}>{renderBlocks(block.children)}</div>
+      ) : null}
+    </>
+  );
+}
+
 function renderBlock(block: NotionBlock) {
   const type = block.type;
   const value = block[type];
@@ -91,7 +172,7 @@ function renderBlock(block: NotionBlock) {
   if (type === "heading_1") {
     return (
       <h1 style={{ fontSize: 34, margin: "40px 0 18px", lineHeight: 1.2 }}>
-        {getPlainText(value.rich_text)}
+        {renderInlineText(value.rich_text)}
       </h1>
     );
   }
@@ -99,7 +180,7 @@ function renderBlock(block: NotionBlock) {
   if (type === "heading_2") {
     return (
       <h2 style={{ fontSize: 27, margin: "36px 0 16px", lineHeight: 1.25 }}>
-        {getPlainText(value.rich_text)}
+        {renderInlineText(value.rich_text)}
       </h2>
     );
   }
@@ -107,7 +188,7 @@ function renderBlock(block: NotionBlock) {
   if (type === "heading_3") {
     return (
       <h3 style={{ fontSize: 22, margin: "30px 0 14px", lineHeight: 1.3 }}>
-        {getPlainText(value.rich_text)}
+        {renderInlineText(value.rich_text)}
       </h3>
     );
   }
@@ -121,7 +202,7 @@ function renderBlock(block: NotionBlock) {
 
     return (
       <p style={{ fontSize: 17, lineHeight: 1.75, margin: "0 0 18px", color: "#222" }}>
-        {text}
+        {renderInlineText(value.rich_text)}
       </p>
     );
   }
@@ -148,14 +229,7 @@ function renderBlock(block: NotionBlock) {
         />
 
         {caption && (
-          <figcaption
-            style={{
-              marginTop: 10,
-              fontSize: 13,
-              lineHeight: 1.5,
-              color: "#777",
-            }}
-          >
+          <figcaption style={{ marginTop: 10, fontSize: 13, lineHeight: 1.5, color: "#777" }}>
             {caption}
           </figcaption>
         )}
@@ -177,13 +251,39 @@ function renderBlock(block: NotionBlock) {
           color: "#333",
         }}
       >
-        {getPlainText(value.rich_text)}
+        {renderInlineText(value.rich_text)}
       </blockquote>
+    );
+  }
+
+  if (type === "callout") {
+    return (
+      <div
+        style={{
+          margin: "28px 0",
+          padding: "18px 22px",
+          background: "#f7f6f2",
+          borderRadius: 16,
+          fontSize: 17,
+          lineHeight: 1.7,
+        }}
+      >
+        {renderInlineText(value.rich_text)}
+      </div>
     );
   }
 
   if (type === "divider") {
     return <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "34px 0" }} />;
+  }
+
+  if (type === "to_do") {
+    return (
+      <div style={{ display: "flex", gap: 10, margin: "0 0 12px", fontSize: 17, lineHeight: 1.7 }}>
+        <span>{value.checked ? "☑" : "☐"}</span>
+        <span>{renderInlineText(value.rich_text)}</span>
+      </div>
+    );
   }
 
   return null;
@@ -202,14 +302,14 @@ function renderBlocks(blocks: NotionBlock[]) {
       while (i < blocks.length && blocks[i].type === "bulleted_list_item") {
         listItems.push(
           <li key={blocks[i].id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
-            {getPlainText(blocks[i].bulleted_list_item.rich_text)}
+            {renderListItem(blocks[i])}
           </li>
         );
         i++;
       }
 
       elements.push(
-        <ul key={`ul-${block.id}`} style={{ margin: "0 0 22px 24px", paddingLeft: 18 }}>
+        <ul key={`ul-${block.id}`} style={{ margin: "0 0 22px 26px", paddingLeft: 18 }}>
           {listItems}
         </ul>
       );
@@ -223,14 +323,14 @@ function renderBlocks(blocks: NotionBlock[]) {
       while (i < blocks.length && blocks[i].type === "numbered_list_item") {
         listItems.push(
           <li key={blocks[i].id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
-            {getPlainText(blocks[i].numbered_list_item.rich_text)}
+            {renderListItem(blocks[i])}
           </li>
         );
         i++;
       }
 
       elements.push(
-        <ol key={`ol-${block.id}`} style={{ margin: "0 0 22px 24px", paddingLeft: 18 }}>
+        <ol key={`ol-${block.id}`} style={{ margin: "0 0 22px 26px", paddingLeft: 18 }}>
           {listItems}
         </ol>
       );
@@ -261,7 +361,7 @@ export default async function ArticlePage({
     );
   }
 
-  const blocks = await getBlocks(article.id);
+  const blocks = await getBlocksWithChildren(article.id);
 
   const backHref =
     article.category === "Market Analysis"
