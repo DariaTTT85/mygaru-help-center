@@ -76,9 +76,13 @@ async function getArticles(): Promise<Article[]> {
   }));
 }
 
-function CardIcon({ type }: { type: "logo" | "star" | "nodes" | "document" }) {
+function CardIcon({
+  type,
+}: {
+  type: "logo" | "star" | "nodes" | "document";
+}) {
   if (type === "logo") {
-    return <img src="/mygaru-icon.png" style={{ width: 30 }} />;
+    return <img src="/mygaru-icon.png" alt="" style={{ width: 30 }} />;
   }
 
   if (type === "star") {
@@ -95,6 +99,7 @@ function CardIcon({ type }: { type: "logo" | "star" | "nodes" | "document" }) {
           d="M11.5 10.5H20.5M10.5 12.5L14.2 19.2M21.5 12.5L17.8 19.2"
           stroke="#111"
           strokeWidth="2"
+          strokeLinecap="round"
         />
       </svg>
     );
@@ -107,8 +112,15 @@ function CardIcon({ type }: { type: "logo" | "star" | "nodes" | "document" }) {
         fill="none"
         stroke="#111"
         strokeWidth="2"
+        strokeLinejoin="round"
       />
       <path d="M18 4V10H23" stroke="#111" strokeWidth="2" />
+      <path
+        d="M11.5 15H19.5M11.5 19H19.5"
+        stroke="#111"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -116,11 +128,14 @@ function CardIcon({ type }: { type: "logo" | "star" | "nodes" | "document" }) {
 export default async function HomePage() {
   const articles = await getArticles();
 
-  const groupedArticles = articles.reduce<Record<string, Article[]>>((acc, article) => {
-    if (!acc[article.category]) acc[article.category] = [];
-    acc[article.category].push(article);
-    return acc;
-  }, {});
+  const groupedArticles = articles.reduce<Record<string, Article[]>>(
+    (acc, article) => {
+      if (!acc[article.category]) acc[article.category] = [];
+      acc[article.category].push(article);
+      return acc;
+    },
+    {}
+  );
 
   const categories = Object.keys(categoryMeta);
 
@@ -135,12 +150,13 @@ export default async function HomePage() {
     >
       <style>{`
         .home-card {
-          transition: transform 180ms ease, box-shadow 180ms ease;
+          transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
         }
 
         .home-card:hover {
           transform: translateY(-4px);
           box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+          border-color: rgba(68,207,189,0.55);
         }
 
         .card-arrow {
@@ -178,13 +194,14 @@ export default async function HomePage() {
               color: "#111",
             }}
           >
-            <img src="/mygaru-icon.png" style={{ width: 40 }} />
+            <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 40 }} />
             <strong style={{ fontSize: 26 }}>myGaru</strong>
           </a>
 
           <a
             href="https://mygaru.com"
             target="_blank"
+            rel="noopener noreferrer"
             style={{
               background: "#111",
               color: "white",
@@ -199,12 +216,30 @@ export default async function HomePage() {
         </header>
 
         <div style={{ textAlign: "center" }}>
-          <h1 style={{ fontSize: 54, marginBottom: 12 }}>
+          <h1
+            style={{
+              fontSize: 54,
+              lineHeight: 1.05,
+              margin: "0 0 16px",
+              letterSpacing: "-1.4px",
+            }}
+          >
             Product Documentation
           </h1>
 
-          <p style={{ fontSize: 18, maxWidth: 760, margin: "0 auto" }}>
-            A structured knowledge base for understanding how myGaru operates, connects with partners, and supports privacy-centric data collaboration.
+          <p
+            style={{
+              fontSize: 18,
+              lineHeight: 1.45,
+              maxWidth: 760,
+              margin: "0 auto",
+              color: "#111",
+              fontWeight: 500,
+            }}
+          >
+            A structured knowledge base for understanding how myGaru operates,
+            connects with partners, and supports privacy-centric data
+            collaboration.
           </p>
         </div>
       </div>
@@ -239,6 +274,10 @@ export default async function HomePage() {
                   border: "1px solid #e4e1d8",
                   textDecoration: "none",
                   color: "#111",
+                  minHeight: 260,
+                  display: "flex",
+                  flexDirection: "column",
+                  boxShadow: "0 12px 28px rgba(0,0,0,0.08)",
                 }}
               >
                 <div
@@ -256,18 +295,60 @@ export default async function HomePage() {
                   <CardIcon type={meta.iconType} />
                 </div>
 
-                <h2 style={{ fontSize: 22 }}>{meta.label}</h2>
+                <h2
+                  style={{
+                    fontSize: 23,
+                    lineHeight: 1.15,
+                    margin: "0 0 14px",
+                    letterSpacing: "-0.3px",
+                  }}
+                >
+                  {meta.label}
+                </h2>
 
-                <p style={{ color: "#555", fontSize: 14 }}>
+                <p
+                  style={{
+                    color: "#555",
+                    fontSize: 14.5,
+                    lineHeight: 1.45,
+                    margin: "0 0 20px",
+                    flex: 1,
+                  }}
+                >
                   {meta.description}
                 </p>
 
-                <p style={{ color: "#168f82", fontWeight: 700 }}>
-                  {count} documents <span className="card-arrow">→</span>
+                <p
+                  style={{
+                    color: "#168f82",
+                    fontWeight: 700,
+                    fontSize: 15,
+                    margin: 0,
+                  }}
+                >
+                  {count} {count === 1 ? "document" : "documents"}{" "}
+                  <span className="card-arrow">→</span>
                 </p>
               </a>
             );
           })}
+        </div>
+
+        <div
+          style={{
+            margin: "34px auto 0",
+            maxWidth: 420,
+            textAlign: "left",
+            background: "white",
+            padding: "12px 17px",
+            borderRadius: 16,
+            border: "1px solid #e4e1d8",
+            boxShadow: "0 8px 22px rgba(0,0,0,0.04)",
+            color: "#777",
+            fontSize: 14,
+          }}
+        >
+          🔍 Search will be added later
         </div>
       </section>
     </main>
