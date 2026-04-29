@@ -103,23 +103,20 @@ async function getBlocksWithChildren(pageId: string): Promise<NotionBlock[]> {
 
 function renderInlineText(richText: any[] = []) {
   return richText.map((text, index) => {
-    const content = text.plain_text;
     const annotations = text.annotations || {};
-
-    let element: React.ReactNode = content;
+    let element: React.ReactNode = text.plain_text;
 
     if (annotations.bold) {
-      element = <strong key={index}>{element}</strong>;
+      element = <strong>{element}</strong>;
     }
 
     if (annotations.italic) {
-      element = <em key={index}>{element}</em>;
+      element = <em>{element}</em>;
     }
 
     if (annotations.code) {
       element = (
         <code
-          key={index}
           style={{
             background: "#f1f0ec",
             borderRadius: 6,
@@ -135,7 +132,6 @@ function renderInlineText(richText: any[] = []) {
     if (text.href) {
       element = (
         <a
-          key={index}
           href={text.href}
           target="_blank"
           rel="noopener noreferrer"
@@ -150,20 +146,115 @@ function renderInlineText(richText: any[] = []) {
   });
 }
 
-function renderListItem(block: NotionBlock) {
-  const value = block[block.type];
-
-  return (
-    <>
-      {renderInlineText(value.rich_text)}
-      {block.children?.length ? (
-        <div style={{ marginTop: 8 }}>{renderBlocks(block.children)}</div>
-      ) : null}
-    </>
-  );
+function isListBlock(block: NotionBlock) {
+  return block.type === "bulleted_list_item" || block.type === "numbered_list_item";
 }
 
-function renderBlock(block: NotionBlock) {
+function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < blocks.length) {
+    const block = blocks[i];
+
+    if (block.type === "bulleted_list_item") {
+      const items: React.ReactNode[] = [];
+
+      while (i < blocks.length && blocks[i].type === "bulleted_list_item") {
+        const current = blocks[i];
+
+        items.push(
+          <li
+            key={current.id}
+            style={{
+              fontSize: 17,
+              lineHeight: 1.7,
+              marginBottom: 8,
+              paddingLeft: 2,
+            }}
+          >
+            {renderInlineText(current.bulleted_list_item.rich_text)}
+
+            {current.children?.length ? (
+              <div style={{ marginTop: 8 }}>
+                {renderNestedBlocks(current.children, level + 1)}
+              </div>
+            ) : null}
+          </li>
+        );
+
+        i++;
+      }
+
+      elements.push(
+        <ul
+          key={`ul-${block.id}`}
+          style={{
+            margin: level === 0 ? "0 0 22px 24px" : "8px 0 8px 22px",
+            paddingLeft: 22,
+            listStylePosition: "outside",
+          }}
+        >
+          {items}
+        </ul>
+      );
+
+      continue;
+    }
+
+    if (block.type === "numbered_list_item") {
+      const items: React.ReactNode[] = [];
+
+      while (i < blocks.length && blocks[i].type === "numbered_list_item") {
+        const current = blocks[i];
+
+        items.push(
+          <li
+            key={current.id}
+            style={{
+              fontSize: 17,
+              lineHeight: 1.7,
+              marginBottom: 8,
+              paddingLeft: 2,
+            }}
+          >
+            {renderInlineText(current.numbered_list_item.rich_text)}
+
+            {current.children?.length ? (
+              <div style={{ marginTop: 8 }}>
+                {renderNestedBlocks(current.children, level + 1)}
+              </div>
+            ) : null}
+          </li>
+        );
+
+        i++;
+      }
+
+      elements.push(
+        <ol
+          key={`ol-${block.id}`}
+          style={{
+            margin: level === 0 ? "0 0 22px 24px" : "8px 0 8px 22px",
+            paddingLeft: 22,
+            listStylePosition: "outside",
+          }}
+        >
+          {items}
+        </ol>
+      );
+
+      continue;
+    }
+
+    elements.push(<div key={block.id}>{renderBlock(block, level)}</div>);
+    i++;
+  }
+
+  return elements;
+}
+
+function renderBlock(block: NotionBlock, level = 0) {
   const type = block.type;
   const value = block[type];
 
@@ -201,8 +292,21 @@ function renderBlock(block: NotionBlock) {
     }
 
     return (
-      <p style={{ fontSize: 17, lineHeight: 1.75, margin: "0 0 18px", color: "#222" }}>
+      <p
+        style={{
+          fontSize: 17,
+          lineHeight: 1.75,
+          margin: "0 0 18px",
+          color: "#222",
+        }}
+      >
         {renderInlineText(value.rich_text)}
+
+        {block.children?.length ? (
+          <div style={{ marginTop: 8 }}>
+            {renderNestedBlocks(block.children, level + 1)}
+          </div>
+        ) : null}
       </p>
     );
   }
@@ -229,7 +333,14 @@ function renderBlock(block: NotionBlock) {
         />
 
         {caption && (
-          <figcaption style={{ marginTop: 10, fontSize: 13, lineHeight: 1.5, color: "#777" }}>
+          <figcaption
+            style={{
+              marginTop: 10,
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: "#777",
+            }}
+          >
             {caption}
           </figcaption>
         )}
@@ -274,75 +385,58 @@ function renderBlock(block: NotionBlock) {
   }
 
   if (type === "divider") {
-    return <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "34px 0" }} />;
+    return (
+      <hr
+        style={{
+          border: "none",
+          borderTop: "1px solid #eee",
+          margin: "34px 0",
+        }}
+      />
+    );
   }
 
   if (type === "to_do") {
     return (
-      <div style={{ display: "flex", gap: 10, margin: "0 0 12px", fontSize: 17, lineHeight: 1.7 }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          margin: "0 0 12px",
+          fontSize: 17,
+          lineHeight: 1.7,
+        }}
+      >
         <span>{value.checked ? "☑" : "☐"}</span>
         <span>{renderInlineText(value.rich_text)}</span>
       </div>
     );
   }
 
-  return null;
-}
+  if (type === "toggle") {
+    return (
+      <details
+        style={{
+          margin: "18px 0",
+          padding: "16px 18px",
+          background: "#f7f6f2",
+          borderRadius: 14,
+        }}
+      >
+        <summary style={{ cursor: "pointer", fontWeight: 700 }}>
+          {renderInlineText(value.rich_text)}
+        </summary>
 
-function renderBlocks(blocks: NotionBlock[]) {
-  const elements = [];
-  let i = 0;
-
-  while (i < blocks.length) {
-    const block = blocks[i];
-
-    if (block.type === "bulleted_list_item") {
-      const listItems = [];
-
-      while (i < blocks.length && blocks[i].type === "bulleted_list_item") {
-        listItems.push(
-          <li key={blocks[i].id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
-            {renderListItem(blocks[i])}
-          </li>
-        );
-        i++;
-      }
-
-      elements.push(
-        <ul key={`ul-${block.id}`} style={{ margin: "0 0 22px 26px", paddingLeft: 18 }}>
-          {listItems}
-        </ul>
-      );
-
-      continue;
-    }
-
-    if (block.type === "numbered_list_item") {
-      const listItems = [];
-
-      while (i < blocks.length && blocks[i].type === "numbered_list_item") {
-        listItems.push(
-          <li key={blocks[i].id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
-            {renderListItem(blocks[i])}
-          </li>
-        );
-        i++;
-      }
-
-      elements.push(
-        <ol key={`ol-${block.id}`} style={{ margin: "0 0 22px 26px", paddingLeft: 18 }}>
-          {listItems}
-        </ol>
-      );
-
-      continue;
-    }
-
-    elements.push(<div key={block.id}>{renderBlock(block)}</div>);
-    i++;
+        {block.children?.length ? (
+          <div style={{ marginTop: 14 }}>
+            {renderNestedBlocks(block.children, level + 1)}
+          </div>
+        ) : null}
+      </details>
+    );
   }
 
-  return elements;
+  return null;
 }
 
 export default async function ArticlePage({
@@ -364,9 +458,7 @@ export default async function ArticlePage({
   const blocks = await getBlocksWithChildren(article.id);
 
   const backHref =
-    article.category === "Market Analysis"
-      ? "/market-analysis"
-      : "/product-guide";
+    article.category === "Market Analysis" ? "/market-analysis" : "/product-guide";
 
   return (
     <main
@@ -461,7 +553,7 @@ export default async function ArticlePage({
 
           <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "28px 0" }} />
 
-          <div>{renderBlocks(blocks)}</div>
+          <div>{renderNestedBlocks(blocks)}</div>
 
           <div
             style={{
