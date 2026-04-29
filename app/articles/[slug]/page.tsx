@@ -63,11 +63,23 @@ async function getArticle(slug: string): Promise<Article | null> {
 }
 
 async function getBlocks(pageId: string): Promise<NotionBlock[]> {
-  const data = await notionRequest(
-    `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`
-  );
+  let blocks: NotionBlock[] = [];
+  let cursor: string | undefined = undefined;
+  let hasMore = true;
 
-  return data.results || [];
+  while (hasMore) {
+    const url = cursor
+      ? `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100&start_cursor=${cursor}`
+      : `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`;
+
+    const data = await notionRequest(url);
+
+    blocks = [...blocks, ...(data.results || [])];
+    hasMore = data.has_more || false;
+    cursor = data.next_cursor || undefined;
+  }
+
+  return blocks;
 }
 
 function renderBlock(block: NotionBlock) {
@@ -78,7 +90,7 @@ function renderBlock(block: NotionBlock) {
 
   if (type === "heading_1") {
     return (
-      <h1 style={{ fontSize: 34, margin: "38px 0 16px" }}>
+      <h1 style={{ fontSize: 34, margin: "40px 0 18px", lineHeight: 1.2 }}>
         {getPlainText(value.rich_text)}
       </h1>
     );
@@ -86,7 +98,7 @@ function renderBlock(block: NotionBlock) {
 
   if (type === "heading_2") {
     return (
-      <h2 style={{ fontSize: 26, margin: "34px 0 14px" }}>
+      <h2 style={{ fontSize: 27, margin: "36px 0 16px", lineHeight: 1.25 }}>
         {getPlainText(value.rich_text)}
       </h2>
     );
@@ -94,7 +106,7 @@ function renderBlock(block: NotionBlock) {
 
   if (type === "heading_3") {
     return (
-      <h3 style={{ fontSize: 21, margin: "28px 0 12px" }}>
+      <h3 style={{ fontSize: 22, margin: "30px 0 14px", lineHeight: 1.3 }}>
         {getPlainText(value.rich_text)}
       </h3>
     );
@@ -102,50 +114,135 @@ function renderBlock(block: NotionBlock) {
 
   if (type === "paragraph") {
     const text = getPlainText(value.rich_text);
-    if (!text) return <div style={{ height: 16 }} />;
+
+    if (!text) {
+      return <div style={{ height: 14 }} />;
+    }
 
     return (
-      <p style={{ fontSize: 17, lineHeight: 1.75, margin: "0 0 18px" }}>
+      <p style={{ fontSize: 17, lineHeight: 1.75, margin: "0 0 18px", color: "#222" }}>
         {text}
       </p>
     );
   }
 
-  if (type === "bulleted_list_item") {
-    return (
-      <li style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
-        {getPlainText(value.rich_text)}
-      </li>
-    );
-  }
-
-  if (type === "numbered_list_item") {
-    return (
-      <li style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
-        {getPlainText(value.rich_text)}
-      </li>
-    );
-  }
-
   if (type === "image") {
-    const src =
-      value.type === "external" ? value.external.url : value.file.url;
+    const src = value.type === "external" ? value.external.url : value.file.url;
+    const caption = getPlainText(value.caption || []);
 
     return (
-      <img
-        src={src}
-        alt=""
-        style={{
-          width: "100%",
-          borderRadius: 18,
-          margin: "28px 0",
-          border: "1px solid #eee",
-        }}
-      />
+      <figure style={{ margin: "34px 0", textAlign: "center" }}>
+        <img
+          src={src}
+          alt={caption || ""}
+          style={{
+            maxWidth: "100%",
+            maxHeight: 620,
+            objectFit: "contain",
+            display: "block",
+            margin: "0 auto",
+            borderRadius: 18,
+            border: "1px solid #eee",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          }}
+        />
+
+        {caption && (
+          <figcaption
+            style={{
+              marginTop: 10,
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: "#777",
+            }}
+          >
+            {caption}
+          </figcaption>
+        )}
+      </figure>
     );
+  }
+
+  if (type === "quote") {
+    return (
+      <blockquote
+        style={{
+          margin: "28px 0",
+          padding: "18px 22px",
+          borderLeft: "4px solid #44cfbd",
+          background: "#f7f6f2",
+          borderRadius: 12,
+          fontSize: 17,
+          lineHeight: 1.7,
+          color: "#333",
+        }}
+      >
+        {getPlainText(value.rich_text)}
+      </blockquote>
+    );
+  }
+
+  if (type === "divider") {
+    return <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "34px 0" }} />;
   }
 
   return null;
+}
+
+function renderBlocks(blocks: NotionBlock[]) {
+  const elements = [];
+  let i = 0;
+
+  while (i < blocks.length) {
+    const block = blocks[i];
+
+    if (block.type === "bulleted_list_item") {
+      const listItems = [];
+
+      while (i < blocks.length && blocks[i].type === "bulleted_list_item") {
+        listItems.push(
+          <li key={blocks[i].id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
+            {getPlainText(blocks[i].bulleted_list_item.rich_text)}
+          </li>
+        );
+        i++;
+      }
+
+      elements.push(
+        <ul key={`ul-${block.id}`} style={{ margin: "0 0 22px 24px", paddingLeft: 18 }}>
+          {listItems}
+        </ul>
+      );
+
+      continue;
+    }
+
+    if (block.type === "numbered_list_item") {
+      const listItems = [];
+
+      while (i < blocks.length && blocks[i].type === "numbered_list_item") {
+        listItems.push(
+          <li key={blocks[i].id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
+            {getPlainText(blocks[i].numbered_list_item.rich_text)}
+          </li>
+        );
+        i++;
+      }
+
+      elements.push(
+        <ol key={`ol-${block.id}`} style={{ margin: "0 0 22px 24px", paddingLeft: 18 }}>
+          {listItems}
+        </ol>
+      );
+
+      continue;
+    }
+
+    elements.push(<div key={block.id}>{renderBlock(block)}</div>);
+    i++;
+  }
+
+  return elements;
 }
 
 export default async function ArticlePage({
@@ -264,7 +361,7 @@ export default async function ArticlePage({
 
           <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "28px 0" }} />
 
-          <div>{blocks.map((block) => <div key={block.id}>{renderBlock(block)}</div>)}</div>
+          <div>{renderBlocks(blocks)}</div>
 
           <div
             style={{
