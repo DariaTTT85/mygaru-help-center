@@ -55,7 +55,10 @@ async function getArticle(slug: string): Promise<Article | null> {
     category: item.properties?.Category?.select?.name || "",
     shortAnswer:
       item.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
-    content: item.properties?.Content?.rich_text?.[0]?.plain_text || "",
+    content:
+      item.properties?.Content?.rich_text
+        ?.map((t: any) => t.plain_text)
+        .join("\n") || "",
     slug: item.properties?.Slug?.rich_text?.[0]?.plain_text || "",
   };
 }
@@ -138,7 +141,9 @@ export default async function ArticlePage({
           </a>
 
           <a
-            href="/"
+            href="https://mygaru.com"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               background: "#111",
               color: "white",
@@ -148,7 +153,7 @@ export default async function ArticlePage({
               fontWeight: 700,
             }}
           >
-            All collections
+            Back to myGaru
           </a>
         </div>
       </header>
