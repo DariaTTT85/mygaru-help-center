@@ -106,13 +106,10 @@ function renderInlineText(richText: any[] = []) {
     const annotations = text.annotations || {};
     let element: React.ReactNode = text.plain_text;
 
-    if (annotations.bold) {
-      element = <strong>{element}</strong>;
-    }
-
-    if (annotations.italic) {
-      element = <em>{element}</em>;
-    }
+    if (annotations.bold) element = <strong>{element}</strong>;
+    if (annotations.italic) element = <em>{element}</em>;
+    if (annotations.strikethrough) element = <s>{element}</s>;
+    if (annotations.underline) element = <u>{element}</u>;
 
     if (annotations.code) {
       element = (
@@ -135,7 +132,11 @@ function renderInlineText(richText: any[] = []) {
           href={text.href}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: "#168f82" }}
+          style={{
+            color: "#168f82",
+            textDecoration: "underline",
+            textUnderlineOffset: 3,
+          }}
         >
           {element}
         </a>
@@ -144,10 +145,6 @@ function renderInlineText(richText: any[] = []) {
 
     return <span key={index}>{element}</span>;
   });
-}
-
-function isListBlock(block: NotionBlock) {
-  return block.type === "bulleted_list_item" || block.type === "numbered_list_item";
 }
 
 function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
@@ -190,8 +187,8 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
         <ul
           key={`ul-${block.id}`}
           style={{
-            margin: level === 0 ? "0 0 22px 24px" : "8px 0 8px 22px",
-            paddingLeft: 22,
+            margin: level === 0 ? "0 0 22px 26px" : "8px 0 8px 22px",
+            paddingLeft: 20,
             listStylePosition: "outside",
           }}
         >
@@ -235,8 +232,8 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
         <ol
           key={`ol-${block.id}`}
           style={{
-            margin: level === 0 ? "0 0 22px 24px" : "8px 0 8px 22px",
-            paddingLeft: 22,
+            margin: level === 0 ? "0 0 22px 26px" : "8px 0 8px 22px",
+            paddingLeft: 20,
             listStylePosition: "outside",
           }}
         >
@@ -262,7 +259,7 @@ function renderBlock(block: NotionBlock, level = 0) {
 
   if (type === "heading_1") {
     return (
-      <h1 style={{ fontSize: 34, margin: "40px 0 18px", lineHeight: 1.2 }}>
+      <h1 style={{ fontSize: 34, margin: "42px 0 18px", lineHeight: 1.2 }}>
         {renderInlineText(value.rich_text)}
       </h1>
     );
@@ -287,27 +284,31 @@ function renderBlock(block: NotionBlock, level = 0) {
   if (type === "paragraph") {
     const text = getPlainText(value.rich_text);
 
-    if (!text) {
+    if (!text && !block.children?.length) {
       return <div style={{ height: 14 }} />;
     }
 
     return (
-      <p
-        style={{
-          fontSize: 17,
-          lineHeight: 1.75,
-          margin: "0 0 18px",
-          color: "#222",
-        }}
-      >
-        {renderInlineText(value.rich_text)}
+      <div style={{ margin: "0 0 18px" }}>
+        {text && (
+          <p
+            style={{
+              fontSize: 17,
+              lineHeight: 1.75,
+              margin: 0,
+              color: "#222",
+            }}
+          >
+            {renderInlineText(value.rich_text)}
+          </p>
+        )}
 
         {block.children?.length ? (
           <div style={{ marginTop: 8 }}>
             {renderNestedBlocks(block.children, level + 1)}
           </div>
         ) : null}
-      </p>
+      </div>
     );
   }
 
@@ -316,7 +317,13 @@ function renderBlock(block: NotionBlock, level = 0) {
     const caption = getPlainText(value.caption || []);
 
     return (
-      <figure style={{ margin: "34px 0", textAlign: "center" }}>
+      <figure
+        style={{
+          margin: "32px auto",
+          textAlign: "center",
+          maxWidth: "100%",
+        }}
+      >
         <img
           src={src}
           alt={caption || ""}
@@ -326,7 +333,7 @@ function renderBlock(block: NotionBlock, level = 0) {
             objectFit: "contain",
             display: "block",
             margin: "0 auto",
-            borderRadius: 18,
+            borderRadius: 16,
             border: "1px solid #eee",
             boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
           }}
@@ -368,18 +375,31 @@ function renderBlock(block: NotionBlock, level = 0) {
   }
 
   if (type === "callout") {
+    const icon = value.icon?.emoji || "ℹ️";
+
     return (
       <div
         style={{
           margin: "28px 0",
           padding: "18px 22px",
           background: "#f7f6f2",
+          border: "1px solid #e4e1d8",
           borderRadius: 16,
           fontSize: 17,
           lineHeight: 1.7,
+          display: "flex",
+          gap: 14,
         }}
       >
-        {renderInlineText(value.rich_text)}
+        <span style={{ flexShrink: 0 }}>{icon}</span>
+        <div>
+          {renderInlineText(value.rich_text)}
+          {block.children?.length ? (
+            <div style={{ marginTop: 10 }}>
+              {renderNestedBlocks(block.children, level + 1)}
+            </div>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -420,6 +440,7 @@ function renderBlock(block: NotionBlock, level = 0) {
           margin: "18px 0",
           padding: "16px 18px",
           background: "#f7f6f2",
+          border: "1px solid #e4e1d8",
           borderRadius: 14,
         }}
       >
@@ -433,6 +454,77 @@ function renderBlock(block: NotionBlock, level = 0) {
           </div>
         ) : null}
       </details>
+    );
+  }
+
+  if (type === "column_list") {
+    const columns = block.children || [];
+
+    return (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            columns.length === 2
+              ? "minmax(180px, 0.8fr) minmax(0, 2.2fr)"
+              : `repeat(${Math.max(columns.length, 1)}, minmax(0, 1fr))`,
+          gap: 28,
+          alignItems: "start",
+          margin: "28px 0 34px",
+        }}
+      >
+        {columns.map((column: NotionBlock) => (
+          <div key={column.id}>{renderNestedBlocks(column.children || [], level + 1)}</div>
+        ))}
+      </div>
+    );
+  }
+
+  if (type === "column") {
+    return <div>{renderNestedBlocks(block.children || [], level + 1)}</div>;
+  }
+
+  if (type === "code") {
+    return (
+      <pre
+        style={{
+          background: "#111",
+          color: "white",
+          padding: 20,
+          borderRadius: 16,
+          overflowX: "auto",
+          fontSize: 14,
+          lineHeight: 1.6,
+          margin: "28px 0",
+        }}
+      >
+        <code>{getPlainText(value.rich_text)}</code>
+      </pre>
+    );
+  }
+
+  if (type === "bookmark" || type === "embed" || type === "link_preview") {
+    const url = value.url;
+
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "block",
+          margin: "22px 0",
+          padding: "18px 20px",
+          border: "1px solid #e4e1d8",
+          borderRadius: 16,
+          color: "#168f82",
+          background: "#fff",
+          textDecoration: "none",
+          wordBreak: "break-word",
+        }}
+      >
+        {url}
+      </a>
     );
   }
 
@@ -513,7 +605,7 @@ export default async function ArticlePage({
         </div>
       </header>
 
-      <section style={{ maxWidth: 920, margin: "0 auto", padding: "40px 24px 90px" }}>
+      <section style={{ maxWidth: 980, margin: "0 auto", padding: "40px 24px 90px" }}>
         <div style={{ fontSize: 14, color: "#777", marginBottom: 24 }}>
           <a href="/" style={{ color: "#777", textDecoration: "none" }}>
             All collections
@@ -530,13 +622,13 @@ export default async function ArticlePage({
             background: "white",
             border: "1px solid #e4e1d8",
             borderRadius: 30,
-            padding: "46px 54px",
+            padding: "44px 52px",
             boxShadow: "0 14px 42px rgba(0,0,0,0.07)",
           }}
         >
           <h1
             style={{
-              fontSize: 42,
+              fontSize: 40,
               lineHeight: 1.15,
               margin: "0 0 18px",
               letterSpacing: "-0.8px",
@@ -546,12 +638,19 @@ export default async function ArticlePage({
           </h1>
 
           {article.shortAnswer && (
-            <p style={{ fontSize: 20, lineHeight: 1.6, color: "#555", margin: "0 0 32px" }}>
+            <p
+              style={{
+                fontSize: 19,
+                lineHeight: 1.6,
+                color: "#555",
+                margin: "0 0 30px",
+              }}
+            >
               {article.shortAnswer}
             </p>
           )}
 
-          <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "28px 0" }} />
+          <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "26px 0" }} />
 
           <div>{renderNestedBlocks(blocks)}</div>
 
