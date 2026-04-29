@@ -29,7 +29,9 @@ export default function HomePage() {
           </a>
 
           <a
-            href="/"
+            href="https://mygaru.com"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               background: "#111",
               color: "white",
