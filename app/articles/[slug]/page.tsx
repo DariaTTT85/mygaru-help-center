@@ -578,7 +578,8 @@ export default async function ArticlePage({
       >
         <h1>Article not found</h1>
         <p style={{ color: "#555", fontSize: 16 }}>
-          This article could not be found. Please check that the Notion Slug field is filled in and matches the URL.
+          This article could not be found. Please check that the Notion Slug
+          field is filled in and matches the URL.
         </p>
         <a href="/" style={{ color: "#168f82" }}>
           Back to Help Center
@@ -590,7 +591,13 @@ export default async function ArticlePage({
   const blocks = await getBlocksWithChildren(article.id);
 
   const backHref =
-    article.category === "Market Analysis" ? "/market-analysis" : "/product-guide";
+    article.category === "Market Analysis"
+      ? "/market-analysis"
+      : article.category === "Integrations Guide"
+      ? "/integrations-guide"
+      : article.category === "Legal Documents"
+      ? "/legal-documents"
+      : "/product-guide";
 
   return (
     <main
@@ -601,7 +608,13 @@ export default async function ArticlePage({
         color: "#111",
       }}
     >
-      <header style={{ padding: "18px 72px", display: "flex", justifyContent: "center" }}>
+      <header
+        style={{
+          padding: "18px 72px",
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
         <div
           style={{
             width: "100%",
@@ -625,7 +638,11 @@ export default async function ArticlePage({
               textDecoration: "none",
             }}
           >
-            <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 42, height: 42 }} />
+            <img
+              src="/mygaru-icon.png"
+              alt="myGaru"
+              style={{ width: 42, height: 42 }}
+            />
             <strong style={{ fontSize: 28 }}>myGaru</strong>
           </a>
 
@@ -645,10 +662,16 @@ export default async function ArticlePage({
         </div>
       </header>
 
-      <section style={{ maxWidth: 980, margin: "0 auto", padding: "40px 24px 90px" }}>
+      <section
+        style={{
+          maxWidth: 980,
+          margin: "0 auto",
+          padding: "40px 24px 90px",
+        }}
+      >
         <div style={{ fontSize: 14, color: "#777", marginBottom: 24 }}>
           <a href="/" style={{ color: "#777", textDecoration: "none" }}>
-            All collections
+            Home
           </a>{" "}
           ›{" "}
           <a href={backHref} style={{ color: "#777", textDecoration: "none" }}>
@@ -690,7 +713,13 @@ export default async function ArticlePage({
             </p>
           )}
 
-          <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "26px 0" }} />
+          <hr
+            style={{
+              border: "none",
+              borderTop: "1px solid #eee",
+              margin: "26px 0",
+            }}
+          />
 
           <div>{renderNestedBlocks(blocks)}</div>
 
