@@ -19,6 +19,10 @@ function getPlainText(richText: any[] = []) {
 async function notionRequest(url: string, options: RequestInit = {}) {
   const token = process.env.NOTION_TOKEN;
 
+  if (!token) {
+    throw new Error("Missing NOTION_TOKEN");
+  }
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -30,14 +34,18 @@ async function notionRequest(url: string, options: RequestInit = {}) {
     cache: "no-store",
   });
 
+  if (!response.ok) {
+    return null;
+  }
+
   return response.json();
 }
 
 async function getArticle(slug: string): Promise<Article | null> {
-  if (!slug) return null;
-
   const databaseId = process.env.NOTION_DATABASE_ID;
-  if (!databaseId) return null;
+  const decodedSlug = decodeURIComponent(slug || "").trim();
+
+  if (!databaseId || !decodedSlug) return null;
 
   const data = await notionRequest(
     `https://api.notion.com/v1/databases/${databaseId}/query`,
@@ -45,24 +53,29 @@ async function getArticle(slug: string): Promise<Article | null> {
       method: "POST",
       body: JSON.stringify({
         filter: {
-          property: "Status",
-          select: {
-            equals: "Ready",
-          },
+          and: [
+            {
+              property: "Status",
+              select: {
+                equals: "Ready",
+              },
+            },
+            {
+              property: "Slug",
+              rich_text: {
+                equals: decodedSlug,
+              },
+            },
+          ],
         },
-        page_size: 100,
+        page_size: 1,
       }),
     }
   );
 
-  if (!data.results?.length) return null;
+  if (!data?.results?.length) return null;
 
-  const page = data.results.find((item: any) => {
-    const itemSlug = item.properties?.Slug?.rich_text?.[0]?.plain_text || "";
-    return itemSlug === slug;
-  });
-
-  if (!page) return null;
+  const page = data.results[0];
 
   return {
     id: page.id,
@@ -85,6 +98,8 @@ async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
       : `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`;
 
     const data = await notionRequest(url);
+
+    if (!data) return blocks;
 
     blocks = [...blocks, ...(data.results || [])];
     hasMore = data.has_more || false;
@@ -329,13 +344,7 @@ function renderBlock(block: NotionBlock, level = 0) {
     const caption = getPlainText(value.caption || []);
 
     return (
-      <figure
-        style={{
-          margin: "32px auto",
-          textAlign: "center",
-          maxWidth: "100%",
-        }}
-      >
+      <figure style={{ margin: "32px auto", textAlign: "center", maxWidth: "100%" }}>
         <img
           src={src}
           alt={caption || ""}
@@ -486,9 +495,7 @@ function renderBlock(block: NotionBlock, level = 0) {
         }}
       >
         {columns.map((column: NotionBlock) => (
-          <div key={column.id}>
-            {renderNestedBlocks(column.children || [], level + 1)}
-          </div>
+          <div key={column.id}>{renderNestedBlocks(column.children || [], level + 1)}</div>
         ))}
       </div>
     );
@@ -550,24 +557,6 @@ export default async function ArticlePage({
 }: {
   params: { slug: string };
 }) {
-  if (!params.slug) {
-    return (
-      <main
-        style={{
-          fontFamily: "Ubuntu, Arial, sans-serif",
-          background: "#f4f3ef",
-          minHeight: "100vh",
-          padding: 40,
-        }}
-      >
-        <h1>Invalid article</h1>
-        <a href="/" style={{ color: "#168f82" }}>
-          Back to Help Center
-        </a>
-      </main>
-    );
-  }
-
   const article = await getArticle(params.slug);
 
   if (!article) {
@@ -582,8 +571,7 @@ export default async function ArticlePage({
       >
         <h1>Article not found</h1>
         <p style={{ color: "#555", fontSize: 16 }}>
-          This article could not be found. Please check that the Notion Slug
-          field is filled in and matches the URL.
+          Please check that the Notion Slug field exactly matches the URL.
         </p>
         <a href="/" style={{ color: "#168f82" }}>
           Back to Help Center
@@ -627,14 +615,7 @@ export default async function ArticlePage({
             marginBottom: 40,
           }}
         >
-          <a
-            href="/"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              textDecoration: "none",
-            }}
-          >
+          <a href="/" style={{ textDecoration: "none" }}>
             <img
               src={LOGO_SRC}
               alt="myGaru"
@@ -661,12 +642,7 @@ export default async function ArticlePage({
           </a>
         </header>
 
-        <div
-          style={{
-            maxWidth: 980,
-            margin: "0 auto",
-          }}
-        >
+        <div style={{ maxWidth: 980, margin: "0 auto" }}>
           <div
             style={{
               fontSize: 14,
@@ -715,13 +691,7 @@ export default async function ArticlePage({
           padding: "0 24px 90px",
         }}
       >
-        <div
-          style={{
-            fontSize: 14,
-            color: "#777",
-            marginBottom: 18,
-          }}
-        >
+        <div style={{ fontSize: 14, color: "#777", marginBottom: 18 }}>
           <a href="/" style={{ color: "#777", textDecoration: "none" }}>
             Home
           </a>{" "}
