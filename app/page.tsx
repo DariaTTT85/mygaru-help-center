@@ -156,9 +156,9 @@ export default async function HomePage() {
         }
 
         .home-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-          border-color: rgba(68,207,189,0.55);
+          transform: translateY(-6px);
+          box-shadow: 0 24px 52px rgba(0,0,0,0.14);
+          border-color: rgba(68,207,189,0.7);
         }
 
         .card-arrow {
@@ -167,14 +167,14 @@ export default async function HomePage() {
         }
 
         .home-card:hover .card-arrow {
-          transform: translateX(4px);
+          transform: translateX(5px);
         }
       `}</style>
 
       <div
         style={{
           background:
-            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 56%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
+            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 54%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
           padding: "22px 60px 112px",
         }}
       >
@@ -186,14 +186,7 @@ export default async function HomePage() {
             marginBottom: 46,
           }}
         >
-          <a
-            href="/"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              textDecoration: "none",
-            }}
-          >
+          <a href="/" style={{ textDecoration: "none" }}>
             <img
               src={LOGO_SRC}
               alt="myGaru"
@@ -291,7 +284,7 @@ export default async function HomePage() {
                     width: 50,
                     height: 50,
                     borderRadius: 16,
-                    background: "#44cfbd",
+                    background: "linear-gradient(135deg, #44cfbd, #2bb8a5)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -343,18 +336,18 @@ export default async function HomePage() {
         <div
           style={{
             margin: "34px auto 0",
-            maxWidth: 420,
-            textAlign: "left",
+            maxWidth: 520,
             background: "white",
-            padding: "12px 17px",
-            borderRadius: 16,
+            padding: "14px 18px",
+            borderRadius: 18,
             border: "1px solid #e4e1d8",
             boxShadow: "0 8px 22px rgba(0,0,0,0.04)",
-            color: "#777",
+            color: "#555",
             fontSize: 14,
+            textAlign: "center",
           }}
         >
-          🔍 Search will be added later
+          Start here: Product Guide → Identity → Integration
         </div>
       </section>
     </main>
