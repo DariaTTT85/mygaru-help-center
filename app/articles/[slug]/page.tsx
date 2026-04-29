@@ -1,66 +1,151 @@
 type Article = {
+  id: string;
   title: string;
   category: string;
   shortAnswer: string;
-  content: string;
   slug: string;
 };
 
-async function getArticle(slug: string): Promise<Article | null> {
+type NotionBlock = any;
+
+function getPlainText(richText: any[] = []) {
+  return richText.map((text) => text.plain_text).join("");
+}
+
+async function notionRequest(url: string, options: RequestInit = {}) {
   const token = process.env.NOTION_TOKEN;
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "Notion-Version": "2022-06-28",
+      ...(options.headers || {}),
+    },
+    cache: "no-store",
+  });
+
+  return response.json();
+}
+
+async function getArticle(slug: string): Promise<Article | null> {
   const databaseId = process.env.NOTION_DATABASE_ID;
 
-  if (!token || !databaseId) return null;
-
-  const response = await fetch(
+  const data = await notionRequest(
     `https://api.notion.com/v1/databases/${databaseId}/query`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Notion-Version": "2022-06-28",
-      },
       body: JSON.stringify({
         filter: {
           and: [
-            {
-              property: "Status",
-              select: {
-                equals: "Ready",
-              },
-            },
-            {
-              property: "Slug",
-              rich_text: {
-                equals: slug,
-              },
-            },
+            { property: "Status", select: { equals: "Ready" } },
+            { property: "Slug", rich_text: { equals: slug } },
           ],
         },
         page_size: 1,
       }),
-      cache: "no-store",
     }
   );
 
-  const data = await response.json();
+  if (!data.results?.length) return null;
 
-  if (!response.ok || !data.results?.length) return null;
-
-  const item = data.results[0];
+  const page = data.results[0];
 
   return {
-    title: item.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    category: item.properties?.Category?.select?.name || "",
+    id: page.id,
+    title: page.properties?.Title?.title?.[0]?.plain_text || "Untitled",
+    category: page.properties?.Category?.select?.name || "",
     shortAnswer:
-      item.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
-    content:
-      item.properties?.Content?.rich_text
-        ?.map((t: any) => t.plain_text)
-        .join("\n") || "",
-    slug: item.properties?.Slug?.rich_text?.[0]?.plain_text || "",
+      page.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
+    slug: page.properties?.Slug?.rich_text?.[0]?.plain_text || "",
   };
+}
+
+async function getBlocks(pageId: string): Promise<NotionBlock[]> {
+  const data = await notionRequest(
+    `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`
+  );
+
+  return data.results || [];
+}
+
+function renderBlock(block: NotionBlock) {
+  const type = block.type;
+  const value = block[type];
+
+  if (!value) return null;
+
+  if (type === "heading_1") {
+    return (
+      <h1 style={{ fontSize: 34, margin: "38px 0 16px" }}>
+        {getPlainText(value.rich_text)}
+      </h1>
+    );
+  }
+
+  if (type === "heading_2") {
+    return (
+      <h2 style={{ fontSize: 26, margin: "34px 0 14px" }}>
+        {getPlainText(value.rich_text)}
+      </h2>
+    );
+  }
+
+  if (type === "heading_3") {
+    return (
+      <h3 style={{ fontSize: 21, margin: "28px 0 12px" }}>
+        {getPlainText(value.rich_text)}
+      </h3>
+    );
+  }
+
+  if (type === "paragraph") {
+    const text = getPlainText(value.rich_text);
+    if (!text) return <div style={{ height: 16 }} />;
+
+    return (
+      <p style={{ fontSize: 17, lineHeight: 1.75, margin: "0 0 18px" }}>
+        {text}
+      </p>
+    );
+  }
+
+  if (type === "bulleted_list_item") {
+    return (
+      <li style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
+        {getPlainText(value.rich_text)}
+      </li>
+    );
+  }
+
+  if (type === "numbered_list_item") {
+    return (
+      <li style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
+        {getPlainText(value.rich_text)}
+      </li>
+    );
+  }
+
+  if (type === "image") {
+    const src =
+      value.type === "external" ? value.external.url : value.file.url;
+
+    return (
+      <img
+        src={src}
+        alt=""
+        style={{
+          width: "100%",
+          borderRadius: 18,
+          margin: "28px 0",
+          border: "1px solid #eee",
+        }}
+      />
+    );
+  }
+
+  return null;
 }
 
 export default async function ArticlePage({
@@ -72,21 +157,14 @@ export default async function ArticlePage({
 
   if (!article) {
     return (
-      <main
-        style={{
-          fontFamily: "Ubuntu, Arial, sans-serif",
-          background: "#f4f3ef",
-          minHeight: "100vh",
-          padding: 40,
-        }}
-      >
+      <main style={{ padding: 40, fontFamily: "Ubuntu, Arial, sans-serif" }}>
         <h1>Article not found</h1>
-        <a href="/" style={{ color: "#111" }}>
-          Back to Help Center
-        </a>
+        <a href="/">Back to Help Center</a>
       </main>
     );
   }
+
+  const blocks = await getBlocks(article.id);
 
   const backHref =
     article.category === "Market Analysis"
@@ -102,13 +180,7 @@ export default async function ArticlePage({
         color: "#111",
       }}
     >
-      <header
-        style={{
-          padding: "18px 72px",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
+      <header style={{ padding: "18px 72px", display: "flex", justifyContent: "center" }}>
         <div
           style={{
             width: "100%",
@@ -132,18 +204,12 @@ export default async function ArticlePage({
               textDecoration: "none",
             }}
           >
-            <img
-              src="/mygaru-icon.png"
-              alt="myGaru"
-              style={{ width: 42, height: 42 }}
-            />
+            <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 42, height: 42 }} />
             <strong style={{ fontSize: 28 }}>myGaru</strong>
           </a>
 
           <a
-            href="https://mygaru.com"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/"
             style={{
               background: "#111",
               color: "white",
@@ -153,25 +219,13 @@ export default async function ArticlePage({
               fontWeight: 700,
             }}
           >
-            Back to myGaru
+            Help Center Home
           </a>
         </div>
       </header>
 
-      <section
-        style={{
-          maxWidth: 920,
-          margin: "0 auto",
-          padding: "40px 24px 90px",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 14,
-            color: "#777",
-            marginBottom: 24,
-          }}
-        >
+      <section style={{ maxWidth: 920, margin: "0 auto", padding: "40px 24px 90px" }}>
+        <div style={{ fontSize: 14, color: "#777", marginBottom: 24 }}>
           <a href="/" style={{ color: "#777", textDecoration: "none" }}>
             All collections
           </a>{" "}
@@ -203,36 +257,14 @@ export default async function ArticlePage({
           </h1>
 
           {article.shortAnswer && (
-            <p
-              style={{
-                fontSize: 20,
-                lineHeight: 1.6,
-                color: "#555",
-                margin: "0 0 32px",
-              }}
-            >
+            <p style={{ fontSize: 20, lineHeight: 1.6, color: "#555", margin: "0 0 32px" }}>
               {article.shortAnswer}
             </p>
           )}
 
-          <hr
-            style={{
-              border: "none",
-              borderTop: "1px solid #eee",
-              margin: "28px 0",
-            }}
-          />
+          <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "28px 0" }} />
 
-          <div
-            style={{
-              fontSize: 17,
-              lineHeight: 1.75,
-              color: "#222",
-              whiteSpace: "pre-line",
-            }}
-          >
-            {article.content || "Content is not added yet."}
-          </div>
+          <div>{blocks.map((block) => <div key={block.id}>{renderBlock(block)}</div>)}</div>
 
           <div
             style={{
