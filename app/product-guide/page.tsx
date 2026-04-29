@@ -5,6 +5,8 @@ type Article = {
   order: number;
 };
 
+const LOGO_SRC = "/myGaru_logo_black.png";
+
 async function getProductGuideArticles(): Promise<Article[]> {
   const token = process.env.NOTION_TOKEN;
   const databaseId = process.env.NOTION_DATABASE_ID;
@@ -80,7 +82,7 @@ export default async function ProductGuide() {
       <div
         style={{
           background:
-            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 56%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
+            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 54%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
           padding: "22px 60px 112px",
         }}
       >
@@ -92,18 +94,16 @@ export default async function ProductGuide() {
             marginBottom: 46,
           }}
         >
-          <a
-            href="/"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              textDecoration: "none",
-              color: "#111",
-            }}
-          >
-            <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 40, height: 40 }} />
-            <strong style={{ fontSize: 26 }}>myGaru</strong>
+          <a href="/" style={{ textDecoration: "none" }}>
+            <img
+              src={LOGO_SRC}
+              alt="myGaru"
+              style={{
+                height: 42,
+                width: "auto",
+                display: "block",
+              }}
+            />
           </a>
 
           <a
@@ -143,7 +143,8 @@ export default async function ProductGuide() {
               fontWeight: 500,
             }}
           >
-            Start here to understand the myGaru platform, its core components, and telecom-based identity logic.
+            Start here to understand the myGaru platform, its core components,
+            and telecom-based identity logic.
           </p>
         </div>
       </div>
@@ -164,49 +165,77 @@ export default async function ProductGuide() {
             boxShadow: "0 16px 42px rgba(0,0,0,0.10)",
           }}
         >
-          {articles.map((article, index) => {
-            const isValid = Boolean(article.slug);
+          {articles.length === 0 ? (
+            <div
+              style={{
+                padding: "34px 0",
+                color: "#666",
+                fontSize: 16,
+              }}
+            >
+              No documents yet.
+            </div>
+          ) : (
+            articles.map((article, index) => {
+              const isValid = Boolean(article.slug);
 
-            return (
-              <a
-                key={article.slug || index}
-                href={isValid ? `/articles/${article.slug}` : "#"}
-                className="doc-row"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 30,
-                  padding: "26px 0",
-                  borderTop: index === 0 ? "none" : "1px solid #eee",
-                  textDecoration: "none",
-                  color: "#111",
-                  pointerEvents: isValid ? "auto" : "none",
-                  opacity: isValid ? 1 : 0.5,
-                  borderRadius: 16,
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 21, fontWeight: 700, marginBottom: 8 }}>
-                    {article.title}
+              return (
+                <a
+                  key={article.slug || index}
+                  href={isValid ? `/articles/${article.slug}` : "#"}
+                  className="doc-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 30,
+                    padding: "26px 0",
+                    borderTop: index === 0 ? "none" : "1px solid #eee",
+                    textDecoration: "none",
+                    color: "#111",
+                    pointerEvents: isValid ? "auto" : "none",
+                    opacity: isValid ? 1 : 0.5,
+                    borderRadius: 16,
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 21,
+                        fontWeight: 700,
+                        marginBottom: 8,
+                      }}
+                    >
+                      {article.title}
+                    </div>
+
+                    {article.shortAnswer && (
+                      <div
+                        style={{
+                          color: "#666",
+                          fontSize: 15,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {article.shortAnswer}
+                      </div>
+                    )}
                   </div>
 
-                  {article.shortAnswer && (
-                    <div style={{ color: "#666", fontSize: 15, lineHeight: 1.5 }}>
-                      {article.shortAnswer}
-                    </div>
-                  )}
-                </div>
-
-                <span
-                  className="doc-arrow"
-                  style={{ color: "#44cfbd", fontSize: 34, lineHeight: 1 }}
-                >
-                  ›
-                </span>
-              </a>
-            );
-          })}
+                  <span
+                    className="doc-arrow"
+                    style={{
+                      color: "#44cfbd",
+                      fontSize: 34,
+                      lineHeight: 1,
+                    }}
+                  >
+                    ›
+                  </span>
+                </a>
+              );
+            })
+          )}
         </div>
       </section>
     </main>
