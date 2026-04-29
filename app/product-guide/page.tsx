@@ -88,7 +88,7 @@ export default async function ProductGuide() {
               fontWeight: 700,
             }}
           >
-            All collections
+            Help Center Home
           </a>
         </div>
       </header>
@@ -143,10 +143,6 @@ export default async function ProductGuide() {
             boxShadow: "0 14px 42px rgba(0,0,0,0.07)",
           }}
         >
-          <h2 style={{ fontSize: 25, margin: "24px 0 8px" }}>
-            Get started with myGaru
-          </h2>
-
           {articles.map((article, index) => (
             <a
               key={article.slug}
