@@ -8,12 +8,8 @@ type Article = {
 
 type NotionBlock = any;
 
-/* =========================
-   HELPERS
-========================= */
-
 function getPlainText(richText: any[] = []) {
-  return richText.map((t) => t.plain_text).join("");
+  return richText.map((text) => text.plain_text).join("");
 }
 
 async function notionRequest(url: string, options: RequestInit = {}) {
@@ -33,14 +29,11 @@ async function notionRequest(url: string, options: RequestInit = {}) {
   return response.json();
 }
 
-/* =========================
-   🔴 FIXED: getArticle (без equals по slug)
-========================= */
-
 async function getArticle(slug: string): Promise<Article | null> {
   if (!slug) return null;
 
   const databaseId = process.env.NOTION_DATABASE_ID;
+  if (!databaseId) return null;
 
   const data = await notionRequest(
     `https://api.notion.com/v1/databases/${databaseId}/query`,
@@ -49,7 +42,9 @@ async function getArticle(slug: string): Promise<Article | null> {
       body: JSON.stringify({
         filter: {
           property: "Status",
-          select: { equals: "Ready" },
+          select: {
+            equals: "Ready",
+          },
         },
         page_size: 100,
       }),
@@ -59,8 +54,8 @@ async function getArticle(slug: string): Promise<Article | null> {
   if (!data.results?.length) return null;
 
   const page = data.results.find((item: any) => {
-    const s = item.properties?.Slug?.rich_text?.[0]?.plain_text || "";
-    return s === slug;
+    const itemSlug = item.properties?.Slug?.rich_text?.[0]?.plain_text || "";
+    return itemSlug === slug;
   });
 
   if (!page) return null;
@@ -74,10 +69,6 @@ async function getArticle(slug: string): Promise<Article | null> {
     slug: page.properties?.Slug?.rich_text?.[0]?.plain_text || "",
   };
 }
-
-/* =========================
-   BLOCKS
-========================= */
 
 async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
   let blocks: NotionBlock[] = [];
@@ -100,108 +91,498 @@ async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
 }
 
 async function getBlocksWithChildren(pageId: string): Promise<NotionBlock[]> {
-  const root = await getChildBlocks(pageId);
+  const rootBlocks = await getChildBlocks(pageId);
 
-  async function attach(blocks: NotionBlock[]): Promise<NotionBlock[]> {
+  async function attachChildren(blocks: NotionBlock[]): Promise<NotionBlock[]> {
     return Promise.all(
-      blocks.map(async (b) => {
-        if (b.has_children) {
-          const children = await getChildBlocks(b.id);
-          b.children = await attach(children);
+      blocks.map(async (block) => {
+        if (block.has_children) {
+          const children = await getChildBlocks(block.id);
+          block.children = await attachChildren(children);
         }
-        return b;
+
+        return block;
       })
     );
   }
 
-  return attach(root);
+  return attachChildren(rootBlocks);
 }
 
-/* =========================
-   RENDER
-========================= */
-
 function renderInlineText(richText: any[] = []) {
-  return richText.map((text, i) => {
-    let el: React.ReactNode = text.plain_text;
-    const a = text.annotations || {};
+  return richText.map((text, index) => {
+    const annotations = text.annotations || {};
+    let element: React.ReactNode = text.plain_text;
 
-    if (a.bold) el = <strong>{el}</strong>;
-    if (a.italic) el = <em>{el}</em>;
-    if (a.strikethrough) el = <s>{el}</s>;
-    if (a.underline) el = <u>{el}</u>;
+    if (annotations.bold) element = <strong>{element}</strong>;
+    if (annotations.italic) element = <em>{element}</em>;
+    if (annotations.strikethrough) element = <s>{element}</s>;
+    if (annotations.underline) element = <u>{element}</u>;
 
-    if (a.code) {
-      el = (
-        <code style={{ background: "#f1f0ec", padding: "2px 6px", borderRadius: 6 }}>
-          {el}
+    if (annotations.code) {
+      element = (
+        <code
+          style={{
+            background: "#f1f0ec",
+            borderRadius: 6,
+            padding: "2px 6px",
+            fontSize: "0.92em",
+          }}
+        >
+          {element}
         </code>
       );
     }
 
     if (text.href) {
-      el = (
-        <a href={text.href} target="_blank" rel="noopener noreferrer">
-          {el}
+      element = (
+        <a
+          href={text.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: "#168f82",
+            textDecoration: "underline",
+            textUnderlineOffset: 3,
+          }}
+        >
+          {element}
         </a>
       );
     }
 
-    return <span key={i}>{el}</span>;
+    return <span key={index}>{element}</span>;
   });
 }
 
-function renderBlocks(blocks: NotionBlock[]) {
-  return blocks.map((b) => {
-    const v = b[b.type];
-    if (!v) return null;
+function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
+  const elements: React.ReactNode[] = [];
+  let i = 0;
 
-    if (b.type === "heading_1") return <h1 key={b.id}>{renderInlineText(v.rich_text)}</h1>;
-    if (b.type === "heading_2") return <h2 key={b.id}>{renderInlineText(v.rich_text)}</h2>;
-    if (b.type === "heading_3") return <h3 key={b.id}>{renderInlineText(v.rich_text)}</h3>;
+  while (i < blocks.length) {
+    const block = blocks[i];
 
-    if (b.type === "paragraph")
-      return <p key={b.id}>{renderInlineText(v.rich_text)}</p>;
+    if (block.type === "bulleted_list_item") {
+      const items: React.ReactNode[] = [];
 
-    if (b.type === "image") {
-      const src = v.type === "external" ? v.external.url : v.file.url;
-      return <img key={b.id} src={src} style={{ maxWidth: "100%" }} />;
+      while (i < blocks.length && blocks[i].type === "bulleted_list_item") {
+        const current = blocks[i];
+
+        items.push(
+          <li
+            key={current.id}
+            style={{
+              fontSize: 17,
+              lineHeight: 1.7,
+              marginBottom: 8,
+              paddingLeft: 2,
+            }}
+          >
+            {renderInlineText(current.bulleted_list_item.rich_text)}
+
+            {current.children?.length ? (
+              <div style={{ marginTop: 8 }}>
+                {renderNestedBlocks(current.children, level + 1)}
+              </div>
+            ) : null}
+          </li>
+        );
+
+        i++;
+      }
+
+      elements.push(
+        <ul
+          key={`ul-${block.id}`}
+          style={{
+            margin: level === 0 ? "0 0 22px 26px" : "8px 0 8px 22px",
+            paddingLeft: 20,
+            listStylePosition: "outside",
+          }}
+        >
+          {items}
+        </ul>
+      );
+
+      continue;
     }
 
-    if (b.type === "bulleted_list_item")
-      return <li key={b.id}>{renderInlineText(v.rich_text)}</li>;
+    if (block.type === "numbered_list_item") {
+      const items: React.ReactNode[] = [];
 
-    return null;
-  });
+      while (i < blocks.length && blocks[i].type === "numbered_list_item") {
+        const current = blocks[i];
+
+        items.push(
+          <li
+            key={current.id}
+            style={{
+              fontSize: 17,
+              lineHeight: 1.7,
+              marginBottom: 8,
+              paddingLeft: 2,
+            }}
+          >
+            {renderInlineText(current.numbered_list_item.rich_text)}
+
+            {current.children?.length ? (
+              <div style={{ marginTop: 8 }}>
+                {renderNestedBlocks(current.children, level + 1)}
+              </div>
+            ) : null}
+          </li>
+        );
+
+        i++;
+      }
+
+      elements.push(
+        <ol
+          key={`ol-${block.id}`}
+          style={{
+            margin: level === 0 ? "0 0 22px 26px" : "8px 0 8px 22px",
+            paddingLeft: 20,
+            listStylePosition: "outside",
+          }}
+        >
+          {items}
+        </ol>
+      );
+
+      continue;
+    }
+
+    elements.push(<div key={block.id}>{renderBlock(block, level)}</div>);
+    i++;
+  }
+
+  return elements;
 }
 
-/* =========================
-   PAGE
-========================= */
+function renderBlock(block: NotionBlock, level = 0) {
+  const type = block.type;
+  const value = block[type];
+
+  if (!value) return null;
+
+  if (type === "heading_1") {
+    return (
+      <h1 style={{ fontSize: 34, margin: "42px 0 18px", lineHeight: 1.2 }}>
+        {renderInlineText(value.rich_text)}
+      </h1>
+    );
+  }
+
+  if (type === "heading_2") {
+    return (
+      <h2 style={{ fontSize: 27, margin: "36px 0 16px", lineHeight: 1.25 }}>
+        {renderInlineText(value.rich_text)}
+      </h2>
+    );
+  }
+
+  if (type === "heading_3") {
+    return (
+      <h3 style={{ fontSize: 22, margin: "30px 0 14px", lineHeight: 1.3 }}>
+        {renderInlineText(value.rich_text)}
+      </h3>
+    );
+  }
+
+  if (type === "paragraph") {
+    const text = getPlainText(value.rich_text);
+
+    if (!text && !block.children?.length) {
+      return <div style={{ height: 14 }} />;
+    }
+
+    return (
+      <div style={{ margin: "0 0 18px" }}>
+        {text && (
+          <p
+            style={{
+              fontSize: 17,
+              lineHeight: 1.75,
+              margin: 0,
+              color: "#222",
+            }}
+          >
+            {renderInlineText(value.rich_text)}
+          </p>
+        )}
+
+        {block.children?.length ? (
+          <div style={{ marginTop: 8 }}>
+            {renderNestedBlocks(block.children, level + 1)}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (type === "image") {
+    const src = value.type === "external" ? value.external.url : value.file.url;
+    const caption = getPlainText(value.caption || []);
+
+    return (
+      <figure
+        style={{
+          margin: "32px auto",
+          textAlign: "center",
+          maxWidth: "100%",
+        }}
+      >
+        <img
+          src={src}
+          alt={caption || ""}
+          style={{
+            maxWidth: "100%",
+            maxHeight: 620,
+            objectFit: "contain",
+            display: "block",
+            margin: "0 auto",
+            borderRadius: 16,
+            border: "1px solid #eee",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          }}
+        />
+
+        {caption && (
+          <figcaption
+            style={{
+              marginTop: 10,
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: "#777",
+            }}
+          >
+            {caption}
+          </figcaption>
+        )}
+      </figure>
+    );
+  }
+
+  if (type === "quote") {
+    return (
+      <blockquote
+        style={{
+          margin: "28px 0",
+          padding: "18px 22px",
+          borderLeft: "4px solid #44cfbd",
+          background: "#f7f6f2",
+          borderRadius: 12,
+          fontSize: 17,
+          lineHeight: 1.7,
+          color: "#333",
+        }}
+      >
+        {renderInlineText(value.rich_text)}
+      </blockquote>
+    );
+  }
+
+  if (type === "callout") {
+    const icon = value.icon?.emoji || "ℹ️";
+
+    return (
+      <div
+        style={{
+          margin: "28px 0",
+          padding: "18px 22px",
+          background: "#f7f6f2",
+          border: "1px solid #e4e1d8",
+          borderRadius: 16,
+          fontSize: 17,
+          lineHeight: 1.7,
+          display: "flex",
+          gap: 14,
+        }}
+      >
+        <span style={{ flexShrink: 0 }}>{icon}</span>
+        <div>
+          {renderInlineText(value.rich_text)}
+          {block.children?.length ? (
+            <div style={{ marginTop: 10 }}>
+              {renderNestedBlocks(block.children, level + 1)}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "divider") {
+    return (
+      <hr
+        style={{
+          border: "none",
+          borderTop: "1px solid #eee",
+          margin: "34px 0",
+        }}
+      />
+    );
+  }
+
+  if (type === "to_do") {
+    return (
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          margin: "0 0 12px",
+          fontSize: 17,
+          lineHeight: 1.7,
+        }}
+      >
+        <span>{value.checked ? "☑" : "☐"}</span>
+        <span>{renderInlineText(value.rich_text)}</span>
+      </div>
+    );
+  }
+
+  if (type === "toggle") {
+    return (
+      <details
+        style={{
+          margin: "18px 0",
+          padding: "16px 18px",
+          background: "#f7f6f2",
+          border: "1px solid #e4e1d8",
+          borderRadius: 14,
+        }}
+      >
+        <summary style={{ cursor: "pointer", fontWeight: 700 }}>
+          {renderInlineText(value.rich_text)}
+        </summary>
+
+        {block.children?.length ? (
+          <div style={{ marginTop: 14 }}>
+            {renderNestedBlocks(block.children, level + 1)}
+          </div>
+        ) : null}
+      </details>
+    );
+  }
+
+  if (type === "column_list") {
+    const columns = block.children || [];
+
+    return (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            columns.length === 2
+              ? "minmax(180px, 0.8fr) minmax(0, 2.2fr)"
+              : `repeat(${Math.max(columns.length, 1)}, minmax(0, 1fr))`,
+          gap: 28,
+          alignItems: "start",
+          margin: "28px 0 34px",
+        }}
+      >
+        {columns.map((column: NotionBlock) => (
+          <div key={column.id}>
+            {renderNestedBlocks(column.children || [], level + 1)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (type === "column") {
+    return <div>{renderNestedBlocks(block.children || [], level + 1)}</div>;
+  }
+
+  if (type === "code") {
+    return (
+      <pre
+        style={{
+          background: "#111",
+          color: "white",
+          padding: 20,
+          borderRadius: 16,
+          overflowX: "auto",
+          fontSize: 14,
+          lineHeight: 1.6,
+          margin: "28px 0",
+        }}
+      >
+        <code>{getPlainText(value.rich_text)}</code>
+      </pre>
+    );
+  }
+
+  if (type === "bookmark" || type === "embed" || type === "link_preview") {
+    const url = value.url;
+
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "block",
+          margin: "22px 0",
+          padding: "18px 20px",
+          border: "1px solid #e4e1d8",
+          borderRadius: 16,
+          color: "#168f82",
+          background: "#fff",
+          textDecoration: "none",
+          wordBreak: "break-word",
+        }}
+      >
+        {url}
+      </a>
+    );
+  }
+
+  return null;
+}
 
 export default async function ArticlePage({
   params,
 }: {
   params: { slug: string };
 }) {
-  // 🔴 защита от пустого slug
   if (!params.slug) {
     return (
-      <main style={{ padding: 40 }}>
+      <main
+        style={{
+          fontFamily: "Ubuntu, Arial, sans-serif",
+          background: "#f4f3ef",
+          minHeight: "100vh",
+          padding: 40,
+        }}
+      >
         <h1>Invalid article</h1>
-        <a href="/">Back to Help Center</a>
+        <a href="/" style={{ color: "#168f82" }}>
+          Back to Help Center
+        </a>
       </main>
     );
   }
 
   const article = await getArticle(params.slug);
 
-  // 🔴 нормальный fallback (без редиректа)
   if (!article) {
     return (
-      <main style={{ padding: 40 }}>
+      <main
+        style={{
+          fontFamily: "Ubuntu, Arial, sans-serif",
+          background: "#f4f3ef",
+          minHeight: "100vh",
+          padding: 40,
+        }}
+      >
         <h1>Article not found</h1>
-        <a href="/">Back to Help Center</a>
+        <p style={{ color: "#555", fontSize: 16 }}>
+          This article could not be found. Please check that the Notion Slug field is filled in and matches the URL.
+        </p>
+        <a href="/" style={{ color: "#168f82" }}>
+          Back to Help Center
+        </a>
       </main>
     );
   }
@@ -209,21 +590,125 @@ export default async function ArticlePage({
   const blocks = await getBlocksWithChildren(article.id);
 
   const backHref =
-    article.category === "Market Analysis"
-      ? "/market-analysis"
-      : "/product-guide";
+    article.category === "Market Analysis" ? "/market-analysis" : "/product-guide";
 
   return (
-    <main style={{ padding: 40, maxWidth: 900, margin: "0 auto" }}>
-      <div style={{ marginBottom: 20 }}>
-        <a href={backHref}>← Back to {article.category}</a>
-      </div>
+    <main
+      style={{
+        fontFamily: "Ubuntu, Arial, sans-serif",
+        background: "#f4f3ef",
+        minHeight: "100vh",
+        color: "#111",
+      }}
+    >
+      <header style={{ padding: "18px 72px", display: "flex", justifyContent: "center" }}>
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 1180,
+            background: "rgba(255,255,255,0.94)",
+            borderRadius: 999,
+            padding: "12px 22px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: "0 14px 38px rgba(0,0,0,0.10)",
+          }}
+        >
+          <a
+            href="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              color: "#111",
+              textDecoration: "none",
+            }}
+          >
+            <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 42, height: 42 }} />
+            <strong style={{ fontSize: 28 }}>myGaru</strong>
+          </a>
 
-      <h1>{article.title}</h1>
+          <a
+            href="/"
+            style={{
+              background: "#111",
+              color: "white",
+              textDecoration: "none",
+              padding: "13px 24px",
+              borderRadius: 999,
+              fontWeight: 700,
+            }}
+          >
+            Help Center Home
+          </a>
+        </div>
+      </header>
 
-      {article.shortAnswer && <p>{article.shortAnswer}</p>}
+      <section style={{ maxWidth: 980, margin: "0 auto", padding: "40px 24px 90px" }}>
+        <div style={{ fontSize: 14, color: "#777", marginBottom: 24 }}>
+          <a href="/" style={{ color: "#777", textDecoration: "none" }}>
+            All collections
+          </a>{" "}
+          ›{" "}
+          <a href={backHref} style={{ color: "#777", textDecoration: "none" }}>
+            {article.category}
+          </a>{" "}
+          › {article.title}
+        </div>
 
-      <div>{renderBlocks(blocks)}</div>
+        <article
+          style={{
+            background: "white",
+            border: "1px solid #e4e1d8",
+            borderRadius: 30,
+            padding: "44px 52px",
+            boxShadow: "0 14px 42px rgba(0,0,0,0.07)",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: 40,
+              lineHeight: 1.15,
+              margin: "0 0 18px",
+              letterSpacing: "-0.8px",
+            }}
+          >
+            {article.title}
+          </h1>
+
+          {article.shortAnswer && (
+            <p
+              style={{
+                fontSize: 19,
+                lineHeight: 1.6,
+                color: "#555",
+                margin: "0 0 30px",
+              }}
+            >
+              {article.shortAnswer}
+            </p>
+          )}
+
+          <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "26px 0" }} />
+
+          <div>{renderNestedBlocks(blocks)}</div>
+
+          <div
+            style={{
+              marginTop: 38,
+              padding: 22,
+              background: "#f7f6f2",
+              borderRadius: 18,
+            }}
+          >
+            <strong>Back to: </strong>
+            <a href={backHref} style={{ color: "#111" }}>
+              {article.category}
+            </a>
+          </div>
+        </article>
+      </section>
     </main>
   );
 }
