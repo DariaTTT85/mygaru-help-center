@@ -34,7 +34,6 @@ async function getProductGuideArticles(): Promise<Article[]> {
   );
 
   const data = await response.json();
-
   if (!response.ok) return [];
 
   return data.results.map((item: any) => ({
@@ -58,6 +57,7 @@ export default async function ProductGuide() {
         color: "#111",
       }}
     >
+      {/* HEADER */}
       <header style={{ padding: "18px 72px", display: "flex", justifyContent: "center" }}>
         <div
           style={{
@@ -72,7 +72,7 @@ export default async function ProductGuide() {
             boxShadow: "0 14px 38px rgba(0,0,0,0.10)",
           }}
         >
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: 14, color: "#111", textDecoration: "none" }}>
+          <a href="/" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", color: "#111" }}>
             <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 42, height: 42 }} />
             <strong style={{ fontSize: 28 }}>myGaru</strong>
           </a>
@@ -93,7 +93,9 @@ export default async function ProductGuide() {
         </div>
       </header>
 
+      {/* CONTENT */}
       <section style={{ maxWidth: 980, margin: "0 auto", padding: "36px 24px 80px" }}>
+        {/* TOP BLOCK */}
         <div
           style={{
             borderRadius: 28,
@@ -105,35 +107,16 @@ export default async function ProductGuide() {
             boxShadow: "0 12px 34px rgba(0,0,0,0.06)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <div
-              style={{
-                width: 54,
-                height: 54,
-                borderRadius: 18,
-                background: "#44cfbd",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <img src="/mygaru-icon.png" alt="" style={{ width: 36, height: 36 }} />
-            </div>
+          <h1 style={{ fontSize: 38, margin: "0 0 8px" }}>
+            Product Guide
+          </h1>
 
-            <div>
-              <h1 style={{ fontSize: 38, margin: "0 0 8px", letterSpacing: "-0.7px" }}>
-                Product Guide
-              </h1>
-
-              <p style={{ color: "#555", fontSize: 17, lineHeight: 1.5, maxWidth: 720, margin: 0 }}>
-                Start here to understand the myGaru platform, its core components,
-                and the logic behind telecom-powered identity.
-              </p>
-            </div>
-          </div>
+          <p style={{ color: "#555", fontSize: 17, lineHeight: 1.5, margin: 0 }}>
+            Start here to understand the myGaru platform, its core components, and telecom-based identity logic.
+          </p>
         </div>
 
+        {/* LIST */}
         <div
           style={{
             background: "white",
@@ -143,33 +126,39 @@ export default async function ProductGuide() {
             boxShadow: "0 14px 42px rgba(0,0,0,0.07)",
           }}
         >
-          {articles.map((article, index) => (
-            <a
-              key={article.slug}
-              href={`/articles/${article.slug}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 30,
-                padding: "24px 0",
-                borderTop: index === 0 ? "none" : "1px solid #eee",
-                textDecoration: "none",
-                color: "#111",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-                  {article.title}
-                </div>
-                <div style={{ color: "#666", fontSize: 15, lineHeight: 1.5 }}>
-                  {article.shortAnswer}
-                </div>
-              </div>
+          {articles.map((article, index) => {
+            const isValid = Boolean(article.slug);
 
-              <span style={{ color: "#44cfbd", fontSize: 34, lineHeight: 1 }}>›</span>
-            </a>
-          ))}
+            return (
+              <a
+                key={article.slug || index}
+                href={isValid ? `/articles/${article.slug}` : "#"}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 30,
+                  padding: "24px 0",
+                  borderTop: index === 0 ? "none" : "1px solid #eee",
+                  textDecoration: "none",
+                  color: "#111",
+                  pointerEvents: isValid ? "auto" : "none",
+                  opacity: isValid ? 1 : 0.5,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+                    {article.title}
+                  </div>
+                  <div style={{ color: "#666", fontSize: 15 }}>
+                    {article.shortAnswer}
+                  </div>
+                </div>
+
+                <span style={{ color: "#44cfbd", fontSize: 34 }}>›</span>
+              </a>
+            );
+          })}
         </div>
       </section>
     </main>
