@@ -5,6 +5,8 @@ type Article = {
   order: number;
 };
 
+const LOGO_SRC = "/myGaru_logo_black.png";
+
 async function getMarketArticles(): Promise<Article[]> {
   const token = process.env.NOTION_TOKEN;
   const databaseId = process.env.NOTION_DATABASE_ID;
@@ -59,7 +61,7 @@ export default async function MarketAnalysis() {
     >
       <style>{`
         .doc-row {
-          transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+          transition: transform 180ms ease, background 180ms ease;
         }
 
         .doc-row:hover {
@@ -80,7 +82,7 @@ export default async function MarketAnalysis() {
       <div
         style={{
           background:
-            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 56%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
+            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 54%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
           padding: "22px 60px 112px",
         }}
       >
@@ -92,22 +94,16 @@ export default async function MarketAnalysis() {
             marginBottom: 46,
           }}
         >
-          <a
-            href="/"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              textDecoration: "none",
-              color: "#111",
-            }}
-          >
+          <a href="/" style={{ textDecoration: "none" }}>
             <img
-              src="/mygaru-icon.png"
+              src={LOGO_SRC}
               alt="myGaru"
-              style={{ width: 40, height: 40 }}
+              style={{
+                height: 42,
+                width: "auto",
+                display: "block",
+              }}
             />
-            <strong style={{ fontSize: 26 }}>myGaru</strong>
           </a>
 
           <a
@@ -147,7 +143,8 @@ export default async function MarketAnalysis() {
               fontWeight: 500,
             }}
           >
-            Market context, identity strategies, regulatory shifts, and myGaru positioning.
+            Market context, identity strategies, regulatory shifts, and myGaru
+            positioning.
           </p>
         </div>
       </div>
@@ -168,61 +165,77 @@ export default async function MarketAnalysis() {
             boxShadow: "0 16px 42px rgba(0,0,0,0.10)",
           }}
         >
-          {articles.map((article, index) => {
-            const isValid = Boolean(article.slug);
+          {articles.length === 0 ? (
+            <div
+              style={{
+                padding: "34px 0",
+                color: "#666",
+                fontSize: 16,
+              }}
+            >
+              No documents yet.
+            </div>
+          ) : (
+            articles.map((article, index) => {
+              const isValid = Boolean(article.slug);
 
-            return (
-              <a
-                key={article.slug || index}
-                href={isValid ? `/articles/${article.slug}` : "#"}
-                className="doc-row"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 30,
-                  padding: "26px 0",
-                  borderTop: index === 0 ? "none" : "1px solid #eee",
-                  textDecoration: "none",
-                  color: "#111",
-                  pointerEvents: isValid ? "auto" : "none",
-                  opacity: isValid ? 1 : 0.5,
-                  borderRadius: 16,
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: 21,
-                      fontWeight: 700,
-                      marginBottom: 8,
-                    }}
-                  >
-                    {article.title}
-                  </div>
-
-                  {article.shortAnswer && (
+              return (
+                <a
+                  key={article.slug || index}
+                  href={isValid ? `/articles/${article.slug}` : "#"}
+                  className="doc-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 30,
+                    padding: "26px 0",
+                    borderTop: index === 0 ? "none" : "1px solid #eee",
+                    textDecoration: "none",
+                    color: "#111",
+                    pointerEvents: isValid ? "auto" : "none",
+                    opacity: isValid ? 1 : 0.5,
+                    borderRadius: 16,
+                  }}
+                >
+                  <div>
                     <div
                       style={{
-                        color: "#666",
-                        fontSize: 15,
-                        lineHeight: 1.5,
+                        fontSize: 21,
+                        fontWeight: 700,
+                        marginBottom: 8,
                       }}
                     >
-                      {article.shortAnswer}
+                      {article.title}
                     </div>
-                  )}
-                </div>
 
-                <span
-                  className="doc-arrow"
-                  style={{ color: "#44cfbd", fontSize: 34, lineHeight: 1 }}
-                >
-                  ›
-                </span>
-              </a>
-            );
-          })}
+                    {article.shortAnswer && (
+                      <div
+                        style={{
+                          color: "#666",
+                          fontSize: 15,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {article.shortAnswer}
+                      </div>
+                    )}
+                  </div>
+
+                  <span
+                    className="doc-arrow"
+                    style={{
+                      color: "#44cfbd",
+                      fontSize: 34,
+                      lineHeight: 1,
+                    }}
+                  >
+                    ›
+                  </span>
+                </a>
+              );
+            })
+          )}
         </div>
       </section>
     </main>
