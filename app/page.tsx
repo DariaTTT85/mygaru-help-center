@@ -13,12 +13,14 @@ const categoryMeta: Record<
 > = {
   "Product Guide": {
     href: "/product-guide",
-    description: "Platform functionality, UX/UI logic, identity, billing, DSP, and product cases.",
+    description:
+      "Platform functionality, UX/UI logic, identity, billing, DSP, and product cases.",
     iconType: "logo",
   },
   "Market Analysis": {
     href: "/market-analysis",
-    description: "Market context, identity strategies, regulatory shifts, and myGaru positioning.",
+    description:
+      "Market context, identity strategies, regulatory shifts, and myGaru positioning.",
     iconType: "star",
   },
 };
@@ -55,8 +57,11 @@ async function getArticles(): Promise<Article[]> {
   if (!response.ok) return [];
 
   return data.results.map((item: any) => ({
-    title: item.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    category: item.properties?.Category?.select?.name || "Uncategorised",
+    title:
+      item.properties?.Title?.title?.[0]?.plain_text || "Untitled",
+    category:
+      item.properties?.Category?.select?.name ||
+      "Uncategorised",
   }));
 }
 
@@ -83,7 +88,13 @@ export default async function HomePage() {
         color: "#111",
       }}
     >
-      <header style={{ padding: "18px 72px", display: "flex", justifyContent: "center" }}>
+      <header
+        style={{
+          padding: "18px 72px",
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
         <div
           style={{
             width: "100%",
@@ -107,7 +118,11 @@ export default async function HomePage() {
               color: "#111",
             }}
           >
-            <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 42, height: 42 }} />
+            <img
+              src="/mygaru-icon.png"
+              alt="myGaru"
+              style={{ width: 42, height: 42 }}
+            />
             <strong style={{ fontSize: 28 }}>myGaru</strong>
           </a>
 
@@ -129,7 +144,43 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <section style={{ maxWidth: 980, margin: "0 auto", padding: "42px 24px 80px" }}>
+      <section
+        style={{
+          maxWidth: 980,
+          margin: "0 auto",
+          padding: "42px 24px 80px",
+        }}
+      >
+        {/* ✅ Welcome banner */}
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e4e1d8",
+            borderRadius: 18,
+            padding: "18px 22px",
+            marginBottom: 28,
+            boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 16,
+              fontWeight: 600,
+              marginBottom: 4,
+            }}
+          >
+            Welcome to the myGaru Help Center
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              color: "#666",
+            }}
+          >
+            Find product documentation, market analysis, and platform guidance in one place.
+          </div>
+        </div>
+
         <div
           style={{
             display: "grid",
@@ -161,7 +212,10 @@ export default async function HomePage() {
                     width: 56,
                     height: 56,
                     borderRadius: 16,
-                    background: meta.iconType === "logo" ? "#44cfbd" : "#111",
+                    background:
+                      meta.iconType === "logo"
+                        ? "#44cfbd"
+                        : "#111",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -169,19 +223,51 @@ export default async function HomePage() {
                   }}
                 >
                   {meta.iconType === "logo" ? (
-                    <img src="/mygaru-icon.png" alt="" style={{ width: 34, height: 34 }} />
+                    <img
+                      src="/mygaru-icon.png"
+                      alt=""
+                      style={{ width: 34, height: 34 }}
+                    />
                   ) : (
-                    <span style={{ color: "#44cfbd", fontSize: 26 }}>✦</span>
+                    <span
+                      style={{
+                        color: "#44cfbd",
+                        fontSize: 26,
+                      }}
+                    >
+                      ✦
+                    </span>
                   )}
                 </div>
 
-                <h1 style={{ fontSize: 28, margin: "0 0 12px" }}>{category}</h1>
+                <h2
+                  style={{
+                    fontSize: 28,
+                    margin: "0 0 12px",
+                  }}
+                >
+                  {category}
+                </h2>
 
-                <p style={{ color: "#555", fontSize: 16, lineHeight: 1.55, margin: "0 0 24px" }}>
+                <p
+                  style={{
+                    color: "#555",
+                    fontSize: 16,
+                    lineHeight: 1.55,
+                    margin: "0 0 24px",
+                  }}
+                >
                   {meta.description}
                 </p>
 
-                <p style={{ color: "#168f82", fontWeight: 700, fontSize: 16, margin: 0 }}>
+                <p
+                  style={{
+                    color: "#168f82",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    margin: 0,
+                  }}
+                >
                   {count} {count === 1 ? "document" : "documents"} →
                 </p>
               </a>
