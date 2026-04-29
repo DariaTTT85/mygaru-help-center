@@ -88,7 +88,7 @@ export default async function MarketAnalysis() {
               fontWeight: 700,
             }}
           >
-            All collections
+            Help Center Home
           </a>
         </div>
       </header>
@@ -127,7 +127,7 @@ export default async function MarketAnalysis() {
               </h1>
 
               <p style={{ color: "#555", fontSize: 17, lineHeight: 1.5, maxWidth: 720, margin: 0 }}>
-                Identity solutions, AdTech market shifts, and myGaru positioning.
+                Market context, identity strategies, regulatory shifts, and myGaru positioning.
               </p>
             </div>
           </div>
@@ -142,10 +142,6 @@ export default async function MarketAnalysis() {
             boxShadow: "0 14px 42px rgba(0,0,0,0.07)",
           }}
         >
-          <h2 style={{ fontSize: 25, margin: "24px 0 8px" }}>
-            Identity Solutions & myGaru positioning
-          </h2>
-
           {articles.map((article, index) => (
             <a
               key={article.slug}
