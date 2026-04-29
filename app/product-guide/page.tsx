@@ -25,7 +25,7 @@ async function getProductGuideArticles(): Promise<Article[]> {
           and: [
             {
               property: "Status",
-              status: {
+              select: {
                 equals: "Ready",
               },
             },
