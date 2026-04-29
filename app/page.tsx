@@ -1,4 +1,79 @@
-export default function HomePage() {
+type Article = {
+  title: string;
+  category: string;
+};
+
+const categoryMeta: Record<
+  string,
+  {
+    href: string;
+    description: string;
+    iconType: "logo" | "star";
+  }
+> = {
+  "Product Guide": {
+    href: "/product-guide",
+    description: "Core concepts, platform modules, and telecom-powered identity logic.",
+    iconType: "logo",
+  },
+  "Market Analysis": {
+    href: "/market-analysis",
+    description: "Identity solutions, AdTech market shifts, and myGaru positioning.",
+    iconType: "star",
+  },
+};
+
+async function getArticles(): Promise<Article[]> {
+  const token = process.env.NOTION_TOKEN;
+  const databaseId = process.env.NOTION_DATABASE_ID;
+
+  if (!token || !databaseId) return [];
+
+  const response = await fetch(
+    `https://api.notion.com/v1/databases/${databaseId}/query`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Notion-Version": "2022-06-28",
+      },
+      body: JSON.stringify({
+        filter: {
+          property: "Status",
+          select: {
+            equals: "Ready",
+          },
+        },
+      }),
+      cache: "no-store",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) return [];
+
+  return data.results.map((item: any) => ({
+    title: item.properties?.Title?.title?.[0]?.plain_text || "Untitled",
+    category: item.properties?.Category?.select?.name || "Uncategorised",
+  }));
+}
+
+export default async function HomePage() {
+  const articles = await getArticles();
+
+  const groupedArticles = articles.reduce<Record<string, Article[]>>(
+    (acc, article) => {
+      if (!acc[article.category]) acc[article.category] = [];
+      acc[article.category].push(article);
+      return acc;
+    },
+    {}
+  );
+
+  const categories = Object.keys(categoryMeta);
+
   return (
     <main
       style={{
@@ -8,7 +83,6 @@ export default function HomePage() {
         color: "#111",
       }}
     >
-      {/* HEADER */}
       <header style={{ padding: "18px 72px", display: "flex", justifyContent: "center" }}>
         <div
           style={{
@@ -23,7 +97,16 @@ export default function HomePage() {
             boxShadow: "0 14px 38px rgba(0,0,0,0.10)",
           }}
         >
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", color: "#111" }}>
+          <a
+            href="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              textDecoration: "none",
+              color: "#111",
+            }}
+          >
             <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 42, height: 42 }} />
             <strong style={{ fontSize: 28 }}>myGaru</strong>
           </a>
@@ -41,49 +124,35 @@ export default function HomePage() {
               fontWeight: 700,
             }}
           >
-            Back to myGaru
+            myGaru website
           </a>
         </div>
       </header>
 
-      {/* HERO (уменьшенный) */}
-      <section style={{ maxWidth: 980, margin: "0 auto", padding: "28px 24px 20px" }}>
-        <div
-          style={{
-            borderRadius: 28,
-            padding: "28px 34px",
-            background:
-              "linear-gradient(135deg, rgba(68,207,189,0.14), rgba(255,255,255,0.96) 52%, rgba(92,70,180,0.10))",
-            border: "1px solid #e4e1d8",
-            boxShadow: "0 12px 34px rgba(0,0,0,0.06)",
-          }}
-        >
-          <h1 style={{ fontSize: 40, marginBottom: 12 }}>
-            Search for answers or browse by topic
-          </h1>
-
-          <p style={{ color: "#555", fontSize: 17, marginBottom: 18 }}>
-            Practical guidance on the myGaru platform, telecom-powered identity,
-            data collaboration, and audience activation.
-          </p>
-
-          <div
+      <section style={{ maxWidth: 980, margin: "0 auto", padding: "34px 24px 80px" }}>
+        <div style={{ marginBottom: 28 }}>
+          <p
             style={{
-              background: "#f7f6f2",
-              borderRadius: 16,
-              padding: "14px 18px",
-              color: "#777",
-              fontSize: 15,
+              color: "#168f82",
+              fontWeight: 700,
+              letterSpacing: 1.1,
+              textTransform: "uppercase",
+              fontSize: 13,
+              margin: "0 0 10px",
             }}
           >
-            🔍 Search for articles...
-          </div>
-        </div>
-      </section>
+            myGaru Knowledge Base
+          </p>
 
-      {/* CARDS */}
-      <section style={{ maxWidth: 980, margin: "0 auto", padding: "12px 24px 80px" }}>
-        <h2 style={{ fontSize: 28, marginBottom: 20 }}>Browse by topic</h2>
+          <h1 style={{ fontSize: 36, lineHeight: 1.15, margin: "0 0 10px" }}>
+            Browse documentation by topic
+          </h1>
+
+          <p style={{ color: "#555", fontSize: 16, lineHeight: 1.55, margin: 0, maxWidth: 720 }}>
+            Practical guidance on the myGaru platform, identity, data collaboration,
+            and audience activation.
+          </p>
+        </div>
 
         <div
           style={{
@@ -92,77 +161,72 @@ export default function HomePage() {
             gap: 24,
           }}
         >
-          {/* PRODUCT GUIDE */}
-          <a
-            href="/product-guide"
-            style={{
-              textDecoration: "none",
-              color: "#111",
-              background: "white",
-              border: "1px solid #e4e1d8",
-              borderRadius: 24,
-              padding: 28,
-              boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
-              display: "block",
-            }}
-          >
-            <div
-              style={{
-                width: 54,
-                height: 54,
-                borderRadius: 16,
-                background: "#44cfbd",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 18,
-              }}
-            >
-              <img src="/mygaru-icon.png" alt="" style={{ width: 34 }} />
-            </div>
+          {categories.map((category) => {
+            const meta = categoryMeta[category];
+            const count = groupedArticles[category]?.length || 0;
 
-            <h3 style={{ fontSize: 22, marginBottom: 10 }}>Product Guide</h3>
+            return (
+              <a
+                key={category}
+                href={meta.href}
+                style={{
+                  textDecoration: "none",
+                  color: "#111",
+                  background: "white",
+                  border: "1px solid #e4e1d8",
+                  borderRadius: 24,
+                  padding: 28,
+                  boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
+                  display: "block",
+                }}
+              >
+                <div
+                  style={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: 16,
+                    background: meta.iconType === "logo" ? "#44cfbd" : "#111",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 18,
+                  }}
+                >
+                  {meta.iconType === "logo" ? (
+                    <img src="/mygaru-icon.png" alt="" style={{ width: 34, height: 34 }} />
+                  ) : (
+                    <span style={{ color: "#44cfbd", fontSize: 26 }}>✦</span>
+                  )}
+                </div>
 
-            <p style={{ color: "#555", fontSize: 15 }}>
-              Core concepts, platform modules, and telecom-powered identity logic.
-            </p>
-          </a>
+                <h2 style={{ fontSize: 24, margin: "0 0 10px" }}>{category}</h2>
 
-          {/* MARKET ANALYSIS */}
-          <a
-            href="/market-analysis"
-            style={{
-              textDecoration: "none",
-              color: "#111",
-              background: "white",
-              border: "1px solid #e4e1d8",
-              borderRadius: 24,
-              padding: 28,
-              boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
-              display: "block",
-            }}
-          >
-            <div
-              style={{
-                width: 54,
-                height: 54,
-                borderRadius: 16,
-                background: "#111",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 18,
-              }}
-            >
-              <span style={{ color: "#44cfbd", fontSize: 26 }}>✦</span>
-            </div>
+                <p style={{ color: "#555", fontSize: 15, lineHeight: 1.55, margin: "0 0 22px" }}>
+                  {meta.description}
+                </p>
 
-            <h3 style={{ fontSize: 22, marginBottom: 10 }}>Market Analysis</h3>
+                <p style={{ color: "#168f82", fontWeight: 700, fontSize: 16, margin: 0 }}>
+                  {count} {count === 1 ? "document" : "documents"} →
+                </p>
+              </a>
+            );
+          })}
+        </div>
 
-            <p style={{ color: "#555", fontSize: 15 }}>
-              Identity solutions, AdTech trends, and myGaru positioning.
-            </p>
-          </a>
+        <div
+          style={{
+            maxWidth: 420,
+            margin: "30px auto 0",
+            background: "white",
+            border: "1px solid #e4e1d8",
+            borderRadius: 16,
+            padding: "11px 16px",
+            color: "#777",
+            fontSize: 14,
+            boxShadow: "0 8px 22px rgba(0,0,0,0.04)",
+          }}
+        >
+          🔍 Search will be added later
         </div>
       </section>
     </main>
