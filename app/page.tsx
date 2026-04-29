@@ -3,6 +3,8 @@ type Article = {
   category: string;
 };
 
+const LOGO_SRC = "/myGaru_logo_black.png";
+
 const categoryMeta: Record<
   string,
   {
@@ -82,7 +84,7 @@ function CardIcon({
   type: "logo" | "star" | "nodes" | "document";
 }) {
   if (type === "logo") {
-    return <img src="/mygaru-icon.png" alt="" style={{ width: 30 }} />;
+    return <img src="/mygaru-icon.png" alt="" style={{ width: 30, height: 30 }} />;
   }
 
   if (type === "star") {
@@ -189,13 +191,18 @@ export default async function HomePage() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 12,
               textDecoration: "none",
-              color: "#111",
             }}
           >
-            <img src="/mygaru-icon.png" alt="myGaru" style={{ width: 40 }} />
-            <strong style={{ fontSize: 26 }}>myGaru</strong>
+            <img
+              src={LOGO_SRC}
+              alt="myGaru"
+              style={{
+                height: 42,
+                width: "auto",
+                display: "block",
+              }}
+            />
           </a>
 
           <a
@@ -238,8 +245,7 @@ export default async function HomePage() {
             }}
           >
             A structured knowledge base for understanding how myGaru operates,
-            connects with partners, and supports privacy-centric data
-            collaboration.
+            connects with partners, and supports privacy-centric data collaboration.
           </p>
         </div>
       </div>
