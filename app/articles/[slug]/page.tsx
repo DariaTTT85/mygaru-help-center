@@ -6,6 +6,8 @@ type Article = {
   category: string;
   shortAnswer: string;
   slug: string;
+  order: number;
+  parentIds: string[];
 };
 
 type NotionBlock = any;
@@ -72,7 +74,65 @@ async function getArticle(slug: string): Promise<Article | null> {
     shortAnswer:
       page.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
     slug: page.properties?.Slug?.rich_text?.[0]?.plain_text || "",
+    order: page.properties?.Order?.number || 999,
+    parentIds:
+      page.properties?.["Parent article"]?.relation?.map((r: any) => r.id) ||
+      [],
   };
+}
+
+async function getArticlesForNavigation(
+  article: Article
+): Promise<Article[]> {
+  const databaseId = process.env.NOTION_DATABASE_ID;
+
+  if (!databaseId || !article.category) return [];
+
+  const data = await notionRequest(
+    `https://api.notion.com/v1/databases/${databaseId}/query`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        filter: {
+          and: [
+            { property: "Status", select: { equals: "Ready" } },
+            { property: "Category", select: { equals: article.category } },
+          ],
+        },
+        sorts: [{ property: "Order", direction: "ascending" }],
+        page_size: 100,
+      }),
+    }
+  );
+
+  if (!data?.results?.length) return [];
+
+  const allArticles: Article[] = data.results.map((page: any) => ({
+    id: page.id,
+    title: page.properties?.Title?.title?.[0]?.plain_text || "Untitled",
+    category: page.properties?.Category?.select?.name || "",
+    shortAnswer:
+      page.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
+    slug: page.properties?.Slug?.rich_text?.[0]?.plain_text || "",
+    order: page.properties?.Order?.number || 999,
+    parentIds:
+      page.properties?.["Parent article"]?.relation?.map((r: any) => r.id) ||
+      [],
+  }));
+
+  if (article.category === "Market Analysis" && article.parentIds.length === 1) {
+    const parentId = article.parentIds[0];
+
+    return allArticles
+      .filter((item) => item.parentIds.includes(parentId))
+      .filter((item) => Boolean(item.slug))
+      .sort((a, b) => a.order - b.order);
+  }
+
+  return allArticles
+    .filter((item) => Boolean(item.slug))
+    .filter((item) => item.parentIds.length === article.parentIds.length)
+    .sort((a, b) => a.order - b.order);
 }
 
 async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
@@ -192,12 +252,7 @@ function renderTable(block: NotionBlock) {
             const isHeader = hasColumnHeader && rowIndex === 0;
 
             return (
-              <tr
-                key={row.id}
-                style={{
-                  background: isHeader ? "#f7f6f2" : "white",
-                }}
-              >
+              <tr key={row.id} style={{ background: isHeader ? "#f7f6f2" : "white" }}>
                 {cells.map((cell: any[], cellIndex: number) => {
                   const CellTag = isHeader ? "th" : "td";
 
@@ -207,13 +262,9 @@ function renderTable(block: NotionBlock) {
                       style={{
                         padding: "12px 14px",
                         borderBottom:
-                          rowIndex === rows.length - 1
-                            ? "none"
-                            : "1px solid #eee",
+                          rowIndex === rows.length - 1 ? "none" : "1px solid #eee",
                         borderRight:
-                          cellIndex === cells.length - 1
-                            ? "none"
-                            : "1px solid #eee",
+                          cellIndex === cells.length - 1 ? "none" : "1px solid #eee",
                         textAlign: "left",
                         verticalAlign: "top",
                         fontWeight: isHeader ? 700 : 400,
@@ -399,26 +450,15 @@ function renderBlock(block: NotionBlock, level = 0) {
     );
   }
 
-  if (type === "table") {
-    return renderTable(block);
-  }
-
-  if (type === "table_row") {
-    return null;
-  }
+  if (type === "table") return renderTable(block);
+  if (type === "table_row") return null;
 
   if (type === "image") {
     const src = value.type === "external" ? value.external.url : value.file.url;
     const caption = getPlainText(value.caption || []);
 
     return (
-      <figure
-        style={{
-          margin: "32px auto",
-          textAlign: "center",
-          maxWidth: "100%",
-        }}
-      >
+      <figure style={{ margin: "32px auto", textAlign: "center", maxWidth: "100%" }}>
         <img
           src={src}
           alt={caption || ""}
@@ -657,6 +697,12 @@ export default async function ArticlePage({
   }
 
   const blocks = await getBlocksWithChildren(article.id);
+  const navArticles = await getArticlesForNavigation(article);
+  const currentIndex = navArticles.findIndex((item) => item.id === article.id);
+  const nextArticle =
+    currentIndex >= 0 && currentIndex < navArticles.length - 1
+      ? navArticles[currentIndex + 1]
+      : null;
 
   const backHref =
     article.category === "Market Analysis"
@@ -676,17 +722,44 @@ export default async function ArticlePage({
         color: "#111",
       }}
     >
+      <style>{`
+        .floating-back {
+          transition: transform 170ms ease, box-shadow 170ms ease, background 170ms ease;
+        }
+
+        .floating-back:hover {
+          transform: translateY(-50%) translateX(-2px) scale(1.06);
+          background: #44cfbd;
+          box-shadow: 0 16px 34px rgba(0,0,0,0.18);
+        }
+
+        .floating-back:hover span {
+          color: #111;
+        }
+
+        .bottom-nav-card {
+          transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+        }
+
+        .bottom-nav-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 14px 30px rgba(0,0,0,0.10);
+          border-color: rgba(68,207,189,0.55);
+        }
+      `}</style>
+
       <a
         href={backHref}
+        className="floating-back"
         title={`Back to ${article.category}`}
         style={{
           position: "fixed",
-          left: 24,
+          left: 22,
           top: "50%",
           transform: "translateY(-50%)",
-          width: 46,
-          height: 46,
-          borderRadius: "50%",
+          minWidth: 52,
+          height: 52,
+          borderRadius: 999,
           background: "white",
           border: "1px solid #dedbd2",
           boxShadow: "0 10px 28px rgba(0,0,0,0.12)",
@@ -694,12 +767,13 @@ export default async function ArticlePage({
           alignItems: "center",
           justifyContent: "center",
           color: "#008f82",
-          fontSize: 28,
+          fontSize: 30,
+          fontWeight: 800,
           textDecoration: "none",
           zIndex: 50,
         }}
       >
-        ←
+        <span style={{ color: "#008f82", lineHeight: 1 }}>←</span>
       </a>
 
       <div
@@ -824,16 +898,73 @@ export default async function ArticlePage({
 
           <div
             style={{
-              marginTop: 44,
-              padding: 22,
-              background: "#f7f6f2",
-              borderRadius: 18,
+              marginTop: 48,
+              display: "grid",
+              gridTemplateColumns: nextArticle ? "1fr 1fr" : "1fr",
+              gap: 18,
+              borderTop: "1px solid #eee",
+              paddingTop: 26,
             }}
           >
-            <strong>Back to: </strong>
-            <a href={backHref} style={{ color: "#111" }}>
-              {article.category}
+            <a
+              href={backHref}
+              className="bottom-nav-card"
+              style={{
+                display: "block",
+                textDecoration: "none",
+                color: "#111",
+                background: "#f7f6f2",
+                border: "1px solid #e4e1d8",
+                borderRadius: 18,
+                padding: "18px 20px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "#777",
+                  marginBottom: 8,
+                  fontWeight: 700,
+                }}
+              >
+                Back to
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 700 }}>
+                ← {article.category}
+              </div>
             </a>
+
+            {nextArticle && (
+              <a
+                href={`/articles/${nextArticle.slug}`}
+                className="bottom-nav-card"
+                style={{
+                  display: "block",
+                  textDecoration: "none",
+                  color: "#111",
+                  background:
+                    "linear-gradient(135deg, rgba(68,207,189,0.14), #ffffff 68%)",
+                  border: "1px solid #e4e1d8",
+                  borderRadius: 18,
+                  padding: "18px 20px",
+                  textAlign: "right",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: "#777",
+                    marginBottom: 8,
+                    fontWeight: 700,
+                  }}
+                >
+                  Next
+                </div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: "#087f75" }}>
+                  {nextArticle.title} →
+                </div>
+              </a>
+            )}
           </div>
         </article>
       </section>
