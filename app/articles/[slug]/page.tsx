@@ -248,8 +248,17 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
         const current = blocks[i];
 
         items.push(
-          <li key={current.id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
+          <li
+            key={current.id}
+            style={{
+              fontSize: 17,
+              lineHeight: 1.7,
+              marginBottom: 8,
+              paddingLeft: 2,
+            }}
+          >
             {renderInlineText(current.bulleted_list_item.rich_text)}
+
             {current.children?.length ? (
               <div style={{ marginTop: 8 }}>
                 {renderNestedBlocks(current.children, level + 1)}
@@ -262,7 +271,14 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
       }
 
       elements.push(
-        <ul key={`ul-${block.id}`} style={{ margin: "0 0 22px 26px", paddingLeft: 20 }}>
+        <ul
+          key={`ul-${block.id}`}
+          style={{
+            margin: level === 0 ? "0 0 22px 26px" : "8px 0 8px 22px",
+            paddingLeft: 20,
+            listStylePosition: "outside",
+          }}
+        >
           {items}
         </ul>
       );
@@ -277,8 +293,17 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
         const current = blocks[i];
 
         items.push(
-          <li key={current.id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
+          <li
+            key={current.id}
+            style={{
+              fontSize: 17,
+              lineHeight: 1.7,
+              marginBottom: 8,
+              paddingLeft: 2,
+            }}
+          >
             {renderInlineText(current.numbered_list_item.rich_text)}
+
             {current.children?.length ? (
               <div style={{ marginTop: 8 }}>
                 {renderNestedBlocks(current.children, level + 1)}
@@ -291,7 +316,14 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
       }
 
       elements.push(
-        <ol key={`ol-${block.id}`} style={{ margin: "0 0 22px 26px", paddingLeft: 20 }}>
+        <ol
+          key={`ol-${block.id}`}
+          style={{
+            margin: level === 0 ? "0 0 22px 26px" : "8px 0 8px 22px",
+            paddingLeft: 20,
+            listStylePosition: "outside",
+          }}
+        >
           {items}
         </ol>
       );
@@ -313,32 +345,55 @@ function renderBlock(block: NotionBlock, level = 0) {
   if (!value) return null;
 
   if (type === "heading_1") {
-    return <h1 style={{ fontSize: 34, margin: "42px 0 18px" }}>{renderInlineText(value.rich_text)}</h1>;
+    return (
+      <h1 style={{ fontSize: 34, margin: "42px 0 18px", lineHeight: 1.2 }}>
+        {renderInlineText(value.rich_text)}
+      </h1>
+    );
   }
 
   if (type === "heading_2") {
-    return <h2 style={{ fontSize: 27, margin: "36px 0 16px" }}>{renderInlineText(value.rich_text)}</h2>;
+    return (
+      <h2 style={{ fontSize: 27, margin: "36px 0 16px", lineHeight: 1.25 }}>
+        {renderInlineText(value.rich_text)}
+      </h2>
+    );
   }
 
   if (type === "heading_3") {
-    return <h3 style={{ fontSize: 22, margin: "30px 0 14px" }}>{renderInlineText(value.rich_text)}</h3>;
+    return (
+      <h3 style={{ fontSize: 22, margin: "30px 0 14px", lineHeight: 1.3 }}>
+        {renderInlineText(value.rich_text)}
+      </h3>
+    );
   }
 
   if (type === "paragraph") {
     const text = getPlainText(value.rich_text);
 
-    if (!text && !block.children?.length) return <div style={{ height: 14 }} />;
+    if (!text && !block.children?.length) {
+      return <div style={{ height: 14 }} />;
+    }
 
     return (
       <div style={{ margin: "0 0 18px" }}>
         {text && (
-          <p style={{ fontSize: 17, lineHeight: 1.75, margin: 0, color: "#222" }}>
+          <p
+            style={{
+              fontSize: 17,
+              lineHeight: 1.75,
+              margin: 0,
+              color: "#222",
+            }}
+          >
             {renderInlineText(value.rich_text)}
           </p>
         )}
 
         {block.children?.length ? (
-          <div style={{ marginTop: 8 }}>{renderNestedBlocks(block.children, level + 1)}</div>
+          <div style={{ marginTop: 8 }}>
+            {renderNestedBlocks(block.children, level + 1)}
+          </div>
         ) : null}
       </div>
     );
@@ -357,7 +412,13 @@ function renderBlock(block: NotionBlock, level = 0) {
     const caption = getPlainText(value.caption || []);
 
     return (
-      <figure style={{ margin: "32px auto", textAlign: "center" }}>
+      <figure
+        style={{
+          margin: "32px auto",
+          textAlign: "center",
+          maxWidth: "100%",
+        }}
+      >
         <img
           src={src}
           alt={caption || ""}
@@ -372,8 +433,16 @@ function renderBlock(block: NotionBlock, level = 0) {
             boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
           }}
         />
+
         {caption && (
-          <figcaption style={{ marginTop: 10, fontSize: 13, color: "#777" }}>
+          <figcaption
+            style={{
+              marginTop: 10,
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: "#777",
+            }}
+          >
             {caption}
           </figcaption>
         )}
@@ -392,6 +461,7 @@ function renderBlock(block: NotionBlock, level = 0) {
           borderRadius: 12,
           fontSize: 17,
           lineHeight: 1.7,
+          color: "#333",
         }}
       >
         {renderInlineText(value.rich_text)}
@@ -416,11 +486,13 @@ function renderBlock(block: NotionBlock, level = 0) {
           gap: 14,
         }}
       >
-        <span>{icon}</span>
+        <span style={{ flexShrink: 0 }}>{icon}</span>
         <div>
           {renderInlineText(value.rich_text)}
           {block.children?.length ? (
-            <div style={{ marginTop: 10 }}>{renderNestedBlocks(block.children, level + 1)}</div>
+            <div style={{ marginTop: 10 }}>
+              {renderNestedBlocks(block.children, level + 1)}
+            </div>
           ) : null}
         </div>
       </div>
@@ -428,12 +500,28 @@ function renderBlock(block: NotionBlock, level = 0) {
   }
 
   if (type === "divider") {
-    return <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "34px 0" }} />;
+    return (
+      <hr
+        style={{
+          border: "none",
+          borderTop: "1px solid #eee",
+          margin: "34px 0",
+        }}
+      />
+    );
   }
 
   if (type === "to_do") {
     return (
-      <div style={{ display: "flex", gap: 10, margin: "0 0 12px", fontSize: 17 }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          margin: "0 0 12px",
+          fontSize: 17,
+          lineHeight: 1.7,
+        }}
+      >
         <span>{value.checked ? "☑" : "☐"}</span>
         <span>{renderInlineText(value.rich_text)}</span>
       </div>
@@ -454,8 +542,11 @@ function renderBlock(block: NotionBlock, level = 0) {
         <summary style={{ cursor: "pointer", fontWeight: 700 }}>
           {renderInlineText(value.rich_text)}
         </summary>
+
         {block.children?.length ? (
-          <div style={{ marginTop: 14 }}>{renderNestedBlocks(block.children, level + 1)}</div>
+          <div style={{ marginTop: 14 }}>
+            {renderNestedBlocks(block.children, level + 1)}
+          </div>
         ) : null}
       </details>
     );
@@ -473,11 +564,14 @@ function renderBlock(block: NotionBlock, level = 0) {
               ? "minmax(180px, 0.8fr) minmax(0, 2.2fr)"
               : `repeat(${Math.max(columns.length, 1)}, minmax(0, 1fr))`,
           gap: 28,
+          alignItems: "start",
           margin: "28px 0 34px",
         }}
       >
         {columns.map((column: NotionBlock) => (
-          <div key={column.id}>{renderNestedBlocks(column.children || [], level + 1)}</div>
+          <div key={column.id}>
+            {renderNestedBlocks(column.children || [], level + 1)}
+          </div>
         ))}
       </div>
     );
@@ -543,7 +637,14 @@ export default async function ArticlePage({
 
   if (!article) {
     return (
-      <main style={{ fontFamily: "Ubuntu, Arial, sans-serif", background: "#f4f3ef", minHeight: "100vh", padding: 40 }}>
+      <main
+        style={{
+          fontFamily: "Ubuntu, Arial, sans-serif",
+          background: "#f4f3ef",
+          minHeight: "100vh",
+          padding: 40,
+        }}
+      >
         <h1>Article not found</h1>
         <p style={{ color: "#555", fontSize: 16 }}>
           Please check that the Notion Slug field exactly matches the URL.
@@ -575,6 +676,32 @@ export default async function ArticlePage({
         color: "#111",
       }}
     >
+      <a
+        href={backHref}
+        title={`Back to ${article.category}`}
+        style={{
+          position: "fixed",
+          left: 24,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 46,
+          height: 46,
+          borderRadius: "50%",
+          background: "white",
+          border: "1px solid #dedbd2",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.12)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#008f82",
+          fontSize: 28,
+          textDecoration: "none",
+          zIndex: 50,
+        }}
+      >
+        ←
+      </a>
+
       <div
         style={{
           background:
@@ -582,9 +709,24 @@ export default async function ArticlePage({
           padding: "22px 60px 120px",
         }}
       >
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 44 }}>
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 44,
+          }}
+        >
           <a href="/" style={{ textDecoration: "none" }}>
-            <img src={LOGO_SRC} alt="myGaru" style={{ height: 42, width: "auto", display: "block" }} />
+            <img
+              src={LOGO_SRC}
+              alt="myGaru"
+              style={{
+                height: 42,
+                width: "auto",
+                display: "block",
+              }}
+            />
           </a>
 
           <a
@@ -605,7 +747,14 @@ export default async function ArticlePage({
         </header>
 
         <div style={{ maxWidth: 980, margin: "0 auto" }}>
-          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, opacity: 0.78 }}>
+          <div
+            style={{
+              fontSize: 15,
+              fontWeight: 700,
+              marginBottom: 14,
+              opacity: 0.78,
+            }}
+          >
             {article.category}
           </div>
 
@@ -622,15 +771,36 @@ export default async function ArticlePage({
           </h1>
 
           {article.shortAnswer && (
-            <p style={{ fontSize: 18, lineHeight: 1.5, maxWidth: 820, margin: 0, fontWeight: 500 }}>
+            <p
+              style={{
+                fontSize: 18,
+                lineHeight: 1.5,
+                maxWidth: 820,
+                margin: 0,
+                fontWeight: 500,
+              }}
+            >
               {article.shortAnswer}
             </p>
           )}
         </div>
       </div>
 
-      <section style={{ maxWidth: 980, margin: "-66px auto 0", padding: "0 24px 90px" }}>
-        <div style={{ fontSize: 15, color: "#555", marginBottom: 20, fontWeight: 500 }}>
+      <section
+        style={{
+          maxWidth: 980,
+          margin: "-66px auto 0",
+          padding: "0 24px 90px",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 15,
+            color: "#555",
+            marginBottom: 20,
+            fontWeight: 500,
+          }}
+        >
           <a href="/" style={{ color: "#555", textDecoration: "none" }}>
             Home
           </a>{" "}
@@ -652,7 +822,14 @@ export default async function ArticlePage({
         >
           <div>{renderNestedBlocks(blocks)}</div>
 
-          <div style={{ marginTop: 44, padding: 22, background: "#f7f6f2", borderRadius: 18 }}>
+          <div
+            style={{
+              marginTop: 44,
+              padding: 22,
+              background: "#f7f6f2",
+              borderRadius: 18,
+            }}
+          >
             <strong>Back to: </strong>
             <a href={backHref} style={{ color: "#111" }}>
               {article.category}
