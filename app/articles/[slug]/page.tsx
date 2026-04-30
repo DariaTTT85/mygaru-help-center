@@ -34,9 +34,7 @@ async function notionRequest(url: string, options: RequestInit = {}) {
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    return null;
-  }
+  if (!response.ok) return null;
 
   return response.json();
 }
@@ -54,18 +52,8 @@ async function getArticle(slug: string): Promise<Article | null> {
       body: JSON.stringify({
         filter: {
           and: [
-            {
-              property: "Status",
-              select: {
-                equals: "Ready",
-              },
-            },
-            {
-              property: "Slug",
-              rich_text: {
-                equals: decodedSlug,
-              },
-            },
+            { property: "Status", select: { equals: "Ready" } },
+            { property: "Slug", rich_text: { equals: decodedSlug } },
           ],
         },
         page_size: 1,
@@ -174,6 +162,78 @@ function renderInlineText(richText: any[] = []) {
   });
 }
 
+function renderTable(block: NotionBlock) {
+  const rows = block.children || [];
+  const hasColumnHeader = block.table?.has_column_header || false;
+
+  if (!rows.length) return null;
+
+  return (
+    <div
+      style={{
+        overflowX: "auto",
+        margin: "30px 0",
+        border: "1px solid #e4e1d8",
+        borderRadius: 16,
+      }}
+    >
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          fontSize: 15,
+          lineHeight: 1.5,
+          background: "white",
+        }}
+      >
+        <tbody>
+          {rows.map((row: NotionBlock, rowIndex: number) => {
+            const cells = row.table_row?.cells || [];
+            const isHeader = hasColumnHeader && rowIndex === 0;
+
+            return (
+              <tr
+                key={row.id}
+                style={{
+                  background: isHeader ? "#f7f6f2" : "white",
+                }}
+              >
+                {cells.map((cell: any[], cellIndex: number) => {
+                  const CellTag = isHeader ? "th" : "td";
+
+                  return (
+                    <CellTag
+                      key={`${row.id}-${cellIndex}`}
+                      style={{
+                        padding: "12px 14px",
+                        borderBottom:
+                          rowIndex === rows.length - 1
+                            ? "none"
+                            : "1px solid #eee",
+                        borderRight:
+                          cellIndex === cells.length - 1
+                            ? "none"
+                            : "1px solid #eee",
+                        textAlign: "left",
+                        verticalAlign: "top",
+                        fontWeight: isHeader ? 700 : 400,
+                        color: "#222",
+                        minWidth: 160,
+                      }}
+                    >
+                      {renderInlineText(cell)}
+                    </CellTag>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
   const elements: ReactNode[] = [];
   let i = 0;
@@ -188,17 +248,8 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
         const current = blocks[i];
 
         items.push(
-          <li
-            key={current.id}
-            style={{
-              fontSize: 17,
-              lineHeight: 1.7,
-              marginBottom: 8,
-              paddingLeft: 2,
-            }}
-          >
+          <li key={current.id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
             {renderInlineText(current.bulleted_list_item.rich_text)}
-
             {current.children?.length ? (
               <div style={{ marginTop: 8 }}>
                 {renderNestedBlocks(current.children, level + 1)}
@@ -211,14 +262,7 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
       }
 
       elements.push(
-        <ul
-          key={`ul-${block.id}`}
-          style={{
-            margin: level === 0 ? "0 0 22px 26px" : "8px 0 8px 22px",
-            paddingLeft: 20,
-            listStylePosition: "outside",
-          }}
-        >
+        <ul key={`ul-${block.id}`} style={{ margin: "0 0 22px 26px", paddingLeft: 20 }}>
           {items}
         </ul>
       );
@@ -233,17 +277,8 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
         const current = blocks[i];
 
         items.push(
-          <li
-            key={current.id}
-            style={{
-              fontSize: 17,
-              lineHeight: 1.7,
-              marginBottom: 8,
-              paddingLeft: 2,
-            }}
-          >
+          <li key={current.id} style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 8 }}>
             {renderInlineText(current.numbered_list_item.rich_text)}
-
             {current.children?.length ? (
               <div style={{ marginTop: 8 }}>
                 {renderNestedBlocks(current.children, level + 1)}
@@ -256,14 +291,7 @@ function renderNestedBlocks(blocks: NotionBlock[], level = 0) {
       }
 
       elements.push(
-        <ol
-          key={`ol-${block.id}`}
-          style={{
-            margin: level === 0 ? "0 0 22px 26px" : "8px 0 8px 22px",
-            paddingLeft: 20,
-            listStylePosition: "outside",
-          }}
-        >
+        <ol key={`ol-${block.id}`} style={{ margin: "0 0 22px 26px", paddingLeft: 20 }}>
           {items}
         </ol>
       );
@@ -285,58 +313,43 @@ function renderBlock(block: NotionBlock, level = 0) {
   if (!value) return null;
 
   if (type === "heading_1") {
-    return (
-      <h1 style={{ fontSize: 34, margin: "42px 0 18px", lineHeight: 1.2 }}>
-        {renderInlineText(value.rich_text)}
-      </h1>
-    );
+    return <h1 style={{ fontSize: 34, margin: "42px 0 18px" }}>{renderInlineText(value.rich_text)}</h1>;
   }
 
   if (type === "heading_2") {
-    return (
-      <h2 style={{ fontSize: 27, margin: "36px 0 16px", lineHeight: 1.25 }}>
-        {renderInlineText(value.rich_text)}
-      </h2>
-    );
+    return <h2 style={{ fontSize: 27, margin: "36px 0 16px" }}>{renderInlineText(value.rich_text)}</h2>;
   }
 
   if (type === "heading_3") {
-    return (
-      <h3 style={{ fontSize: 22, margin: "30px 0 14px", lineHeight: 1.3 }}>
-        {renderInlineText(value.rich_text)}
-      </h3>
-    );
+    return <h3 style={{ fontSize: 22, margin: "30px 0 14px" }}>{renderInlineText(value.rich_text)}</h3>;
   }
 
   if (type === "paragraph") {
     const text = getPlainText(value.rich_text);
 
-    if (!text && !block.children?.length) {
-      return <div style={{ height: 14 }} />;
-    }
+    if (!text && !block.children?.length) return <div style={{ height: 14 }} />;
 
     return (
       <div style={{ margin: "0 0 18px" }}>
         {text && (
-          <p
-            style={{
-              fontSize: 17,
-              lineHeight: 1.75,
-              margin: 0,
-              color: "#222",
-            }}
-          >
+          <p style={{ fontSize: 17, lineHeight: 1.75, margin: 0, color: "#222" }}>
             {renderInlineText(value.rich_text)}
           </p>
         )}
 
         {block.children?.length ? (
-          <div style={{ marginTop: 8 }}>
-            {renderNestedBlocks(block.children, level + 1)}
-          </div>
+          <div style={{ marginTop: 8 }}>{renderNestedBlocks(block.children, level + 1)}</div>
         ) : null}
       </div>
     );
+  }
+
+  if (type === "table") {
+    return renderTable(block);
+  }
+
+  if (type === "table_row") {
+    return null;
   }
 
   if (type === "image") {
@@ -344,7 +357,7 @@ function renderBlock(block: NotionBlock, level = 0) {
     const caption = getPlainText(value.caption || []);
 
     return (
-      <figure style={{ margin: "32px auto", textAlign: "center", maxWidth: "100%" }}>
+      <figure style={{ margin: "32px auto", textAlign: "center" }}>
         <img
           src={src}
           alt={caption || ""}
@@ -359,16 +372,8 @@ function renderBlock(block: NotionBlock, level = 0) {
             boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
           }}
         />
-
         {caption && (
-          <figcaption
-            style={{
-              marginTop: 10,
-              fontSize: 13,
-              lineHeight: 1.5,
-              color: "#777",
-            }}
-          >
+          <figcaption style={{ marginTop: 10, fontSize: 13, color: "#777" }}>
             {caption}
           </figcaption>
         )}
@@ -387,7 +392,6 @@ function renderBlock(block: NotionBlock, level = 0) {
           borderRadius: 12,
           fontSize: 17,
           lineHeight: 1.7,
-          color: "#333",
         }}
       >
         {renderInlineText(value.rich_text)}
@@ -412,13 +416,11 @@ function renderBlock(block: NotionBlock, level = 0) {
           gap: 14,
         }}
       >
-        <span style={{ flexShrink: 0 }}>{icon}</span>
+        <span>{icon}</span>
         <div>
           {renderInlineText(value.rich_text)}
           {block.children?.length ? (
-            <div style={{ marginTop: 10 }}>
-              {renderNestedBlocks(block.children, level + 1)}
-            </div>
+            <div style={{ marginTop: 10 }}>{renderNestedBlocks(block.children, level + 1)}</div>
           ) : null}
         </div>
       </div>
@@ -426,28 +428,12 @@ function renderBlock(block: NotionBlock, level = 0) {
   }
 
   if (type === "divider") {
-    return (
-      <hr
-        style={{
-          border: "none",
-          borderTop: "1px solid #eee",
-          margin: "34px 0",
-        }}
-      />
-    );
+    return <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "34px 0" }} />;
   }
 
   if (type === "to_do") {
     return (
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          margin: "0 0 12px",
-          fontSize: 17,
-          lineHeight: 1.7,
-        }}
-      >
+      <div style={{ display: "flex", gap: 10, margin: "0 0 12px", fontSize: 17 }}>
         <span>{value.checked ? "☑" : "☐"}</span>
         <span>{renderInlineText(value.rich_text)}</span>
       </div>
@@ -468,11 +454,8 @@ function renderBlock(block: NotionBlock, level = 0) {
         <summary style={{ cursor: "pointer", fontWeight: 700 }}>
           {renderInlineText(value.rich_text)}
         </summary>
-
         {block.children?.length ? (
-          <div style={{ marginTop: 14 }}>
-            {renderNestedBlocks(block.children, level + 1)}
-          </div>
+          <div style={{ marginTop: 14 }}>{renderNestedBlocks(block.children, level + 1)}</div>
         ) : null}
       </details>
     );
@@ -490,7 +473,6 @@ function renderBlock(block: NotionBlock, level = 0) {
               ? "minmax(180px, 0.8fr) minmax(0, 2.2fr)"
               : `repeat(${Math.max(columns.length, 1)}, minmax(0, 1fr))`,
           gap: 28,
-          alignItems: "start",
           margin: "28px 0 34px",
         }}
       >
@@ -561,14 +543,7 @@ export default async function ArticlePage({
 
   if (!article) {
     return (
-      <main
-        style={{
-          fontFamily: "Ubuntu, Arial, sans-serif",
-          background: "#f4f3ef",
-          minHeight: "100vh",
-          padding: 40,
-        }}
-      >
+      <main style={{ fontFamily: "Ubuntu, Arial, sans-serif", background: "#f4f3ef", minHeight: "100vh", padding: 40 }}>
         <h1>Article not found</h1>
         <p style={{ color: "#555", fontSize: 16 }}>
           Please check that the Notion Slug field exactly matches the URL.
@@ -604,31 +579,18 @@ export default async function ArticlePage({
         style={{
           background:
             "linear-gradient(180deg, #a7eadf 0%, #44cfbd 54%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
-          padding: "22px 60px 94px",
+          padding: "22px 60px 120px",
         }}
       >
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 40,
-          }}
-        >
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 44 }}>
           <a href="/" style={{ textDecoration: "none" }}>
-            <img
-              src={LOGO_SRC}
-              alt="myGaru"
-              style={{
-                height: 42,
-                width: "auto",
-                display: "block",
-              }}
-            />
+            <img src={LOGO_SRC} alt="myGaru" style={{ height: 42, width: "auto", display: "block" }} />
           </a>
 
           <a
-            href="/"
+            href="https://mygaru.com"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               background: "#111",
               color: "white",
@@ -638,20 +600,12 @@ export default async function ArticlePage({
               fontWeight: 700,
             }}
           >
-            Help Center Home
+            myGaru website
           </a>
         </header>
 
         <div style={{ maxWidth: 980, margin: "0 auto" }}>
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#111",
-              marginBottom: 14,
-              opacity: 0.72,
-            }}
-          >
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, opacity: 0.78 }}>
             {article.category}
           </div>
 
@@ -659,7 +613,7 @@ export default async function ArticlePage({
             style={{
               fontSize: 52,
               lineHeight: 1.08,
-              margin: "0 0 16px",
+              margin: "0 0 18px",
               letterSpacing: "-1.4px",
               maxWidth: 900,
             }}
@@ -668,35 +622,20 @@ export default async function ArticlePage({
           </h1>
 
           {article.shortAnswer && (
-            <p
-              style={{
-                fontSize: 18,
-                lineHeight: 1.5,
-                maxWidth: 820,
-                margin: 0,
-                color: "#111",
-                fontWeight: 500,
-              }}
-            >
+            <p style={{ fontSize: 18, lineHeight: 1.5, maxWidth: 820, margin: 0, fontWeight: 500 }}>
               {article.shortAnswer}
             </p>
           )}
         </div>
       </div>
 
-      <section
-        style={{
-          maxWidth: 980,
-          margin: "-54px auto 0",
-          padding: "0 24px 90px",
-        }}
-      >
-        <div style={{ fontSize: 14, color: "#777", marginBottom: 18 }}>
-          <a href="/" style={{ color: "#777", textDecoration: "none" }}>
+      <section style={{ maxWidth: 980, margin: "-66px auto 0", padding: "0 24px 90px" }}>
+        <div style={{ fontSize: 15, color: "#555", marginBottom: 20, fontWeight: 500 }}>
+          <a href="/" style={{ color: "#555", textDecoration: "none" }}>
             Home
           </a>{" "}
           ›{" "}
-          <a href={backHref} style={{ color: "#777", textDecoration: "none" }}>
+          <a href={backHref} style={{ color: "#555", textDecoration: "none" }}>
             {article.category}
           </a>{" "}
           › {article.title}
@@ -707,20 +646,13 @@ export default async function ArticlePage({
             background: "white",
             border: "1px solid #e4e1d8",
             borderRadius: 30,
-            padding: "44px 52px",
-            boxShadow: "0 16px 42px rgba(0,0,0,0.10)",
+            padding: "48px 56px",
+            boxShadow: "0 18px 46px rgba(0,0,0,0.11)",
           }}
         >
           <div>{renderNestedBlocks(blocks)}</div>
 
-          <div
-            style={{
-              marginTop: 38,
-              padding: 22,
-              background: "#f7f6f2",
-              borderRadius: 18,
-            }}
-          >
+          <div style={{ marginTop: 44, padding: 22, background: "#f7f6f2", borderRadius: 18 }}>
             <strong>Back to: </strong>
             <a href={backHref} style={{ color: "#111" }}>
               {article.category}
