@@ -93,7 +93,7 @@ function CardIcon({
 
   if (type === "nodes") {
     return (
-      <svg width="28" height="28" viewBox="0 0 32 32">
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
         <circle cx="8" cy="9" r="4" fill="#111" />
         <circle cx="24" cy="9" r="4" fill="#111" />
         <circle cx="16" cy="23" r="4" fill="#111" />
@@ -108,7 +108,7 @@ function CardIcon({
   }
 
   return (
-    <svg width="26" height="26" viewBox="0 0 30 30">
+    <svg width="26" height="26" viewBox="0 0 30 30" fill="none">
       <path
         d="M8 4H18L23 9V26H8V4Z"
         fill="none"
@@ -121,6 +121,26 @@ function CardIcon({
         d="M11.5 15H19.5M11.5 19H19.5"
         stroke="#111"
         strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <circle
+        cx="11"
+        cy="11"
+        r="6.5"
+        stroke="#168f82"
+        strokeWidth="2.2"
+      />
+      <path
+        d="M16.2 16.2L20 20"
+        stroke="#168f82"
+        strokeWidth="2.2"
         strokeLinecap="round"
       />
     </svg>
@@ -334,6 +354,7 @@ export default async function HomePage() {
         </div>
 
         <div
+          aria-disabled="true"
           style={{
             margin: "34px auto 0",
             maxWidth: 520,
@@ -342,12 +363,18 @@ export default async function HomePage() {
             borderRadius: 18,
             border: "1px solid #e4e1d8",
             boxShadow: "0 8px 22px rgba(0,0,0,0.04)",
-            color: "#555",
+            color: "#777",
             fontSize: 14,
-            textAlign: "center",
+            textAlign: "left",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            cursor: "not-allowed",
+            opacity: 0.92,
           }}
         >
-          Start here: Product Guide → Identity → Integration
+          <SearchIcon />
+          <span>Search will be added later</span>
         </div>
       </section>
     </main>
