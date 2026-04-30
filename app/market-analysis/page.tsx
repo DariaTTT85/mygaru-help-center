@@ -65,16 +65,10 @@ export default async function MarketAnalysis() {
     .filter((article) => article.parentIds.length === 1)
     .sort((a, b) => a.order - b.order);
 
-  const groups = parents.map((parent) => {
-    const childArticles = children.filter((child) =>
-      child.parentIds.includes(parent.id)
-    );
-
-    return {
-      parent,
-      articles: childArticles,
-    };
-  });
+  const groups = parents.map((parent) => ({
+    parent,
+    articles: children.filter((child) => child.parentIds.includes(parent.id)),
+  }));
 
   const orphanArticles = children.filter((child) => {
     const parentId = child.parentIds[0];
@@ -92,21 +86,21 @@ export default async function MarketAnalysis() {
     >
       <style>{`
         .article-row {
-          transition: transform 180ms ease, background 180ms ease;
+          transition: transform 160ms ease, background 160ms ease;
         }
 
         .article-row:hover {
-          transform: translateX(4px);
+          transform: translateX(3px);
           background: #f8f7f3;
         }
 
         .article-row:hover .article-arrow {
-          transform: translateX(5px);
+          transform: translateX(4px);
         }
 
         .article-arrow {
           display: inline-block;
-          transition: transform 180ms ease;
+          transition: transform 160ms ease;
         }
       `}</style>
 
@@ -114,7 +108,7 @@ export default async function MarketAnalysis() {
         style={{
           background:
             "linear-gradient(180deg, #a7eadf 0%, #44cfbd 54%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
-          padding: "22px 60px 112px",
+          padding: "22px 60px 104px",
         }}
       >
         <header
@@ -185,7 +179,7 @@ export default async function MarketAnalysis() {
       <section
         style={{
           maxWidth: 980,
-          margin: "-64px auto 0",
+          margin: "-58px auto 0",
           padding: "0 24px 90px",
         }}
       >
@@ -194,9 +188,9 @@ export default async function MarketAnalysis() {
             style={{
               background: "white",
               border: "1px solid #e4e1d8",
-              borderRadius: 30,
-              padding: "34px",
-              boxShadow: "0 16px 42px rgba(0,0,0,0.10)",
+              borderRadius: 26,
+              padding: "28px 30px",
+              boxShadow: "0 14px 34px rgba(0,0,0,0.09)",
               color: "#666",
               fontSize: 16,
             }}
@@ -211,32 +205,37 @@ export default async function MarketAnalysis() {
                 style={{
                   background: "white",
                   border: "1px solid #e4e1d8",
-                  borderRadius: 30,
-                  padding: "28px 34px 20px",
-                  boxShadow: "0 16px 42px rgba(0,0,0,0.10)",
-                  marginBottom: 24,
+                  borderRadius: 26,
+                  overflow: "hidden",
+                  boxShadow: "0 14px 34px rgba(0,0,0,0.09)",
+                  marginBottom: 18,
                 }}
               >
-                <h2
-                  style={{
-                    fontSize: 26,
-                    lineHeight: 1.2,
-                    margin: "0 0 24px",
-                    letterSpacing: "-0.4px",
-                  }}
-                >
-                  {group.parent.title}
-                </h2>
-
                 <div
                   style={{
-                    borderTop: "1px solid #eee",
+                    background:
+                      "linear-gradient(135deg, rgba(68,207,189,0.20), rgba(255,255,255,0.96))",
+                    borderBottom: "1px solid #e4e1d8",
+                    padding: "18px 26px",
                   }}
                 >
+                  <h2
+                    style={{
+                      fontSize: 23,
+                      lineHeight: 1.25,
+                      margin: 0,
+                      letterSpacing: "-0.35px",
+                    }}
+                  >
+                    {group.parent.title}
+                  </h2>
+                </div>
+
+                <div style={{ padding: "6px 26px" }}>
                   {group.articles.length === 0 ? (
                     <div
                       style={{
-                        padding: "22px 0",
+                        padding: "16px 0",
                         color: "#777",
                         fontSize: 15,
                       }}
@@ -256,22 +255,21 @@ export default async function MarketAnalysis() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
-                            gap: 30,
-                            padding: "20px 0",
+                            gap: 24,
+                            padding: "14px 0",
                             borderTop:
-                              index === 0 ? "none" : "1px solid #eee",
+                              index === 0 ? "none" : "1px solid #eeeeee",
                             textDecoration: "none",
                             color: "#111",
                             pointerEvents: isValid ? "auto" : "none",
                             opacity: isValid ? 1 : 0.5,
-                            borderRadius: 14,
                           }}
                         >
                           <div>
                             <div
                               style={{
-                                fontSize: 18,
-                                fontWeight: 600,
+                                fontSize: 17,
+                                fontWeight: 650,
                                 lineHeight: 1.35,
                               }}
                             >
@@ -282,9 +280,9 @@ export default async function MarketAnalysis() {
                               <div
                                 style={{
                                   color: "#666",
-                                  fontSize: 14,
-                                  lineHeight: 1.5,
-                                  marginTop: 6,
+                                  fontSize: 13.5,
+                                  lineHeight: 1.45,
+                                  marginTop: 4,
                                 }}
                               >
                                 {article.shortAnswer}
@@ -296,8 +294,9 @@ export default async function MarketAnalysis() {
                             className="article-arrow"
                             style={{
                               color: "#168f82",
-                              fontSize: 28,
+                              fontSize: 26,
                               lineHeight: 1,
+                              flexShrink: 0,
                             }}
                           >
                             ›
@@ -315,24 +314,33 @@ export default async function MarketAnalysis() {
                 style={{
                   background: "white",
                   border: "1px solid #e4e1d8",
-                  borderRadius: 30,
-                  padding: "28px 34px 20px",
-                  boxShadow: "0 16px 42px rgba(0,0,0,0.10)",
-                  marginBottom: 24,
+                  borderRadius: 26,
+                  overflow: "hidden",
+                  boxShadow: "0 14px 34px rgba(0,0,0,0.09)",
+                  marginBottom: 18,
                 }}
               >
-                <h2
+                <div
                   style={{
-                    fontSize: 26,
-                    lineHeight: 1.2,
-                    margin: "0 0 24px",
-                    letterSpacing: "-0.4px",
+                    background:
+                      "linear-gradient(135deg, rgba(68,207,189,0.20), rgba(255,255,255,0.96))",
+                    borderBottom: "1px solid #e4e1d8",
+                    padding: "18px 26px",
                   }}
                 >
-                  Other articles
-                </h2>
+                  <h2
+                    style={{
+                      fontSize: 23,
+                      lineHeight: 1.25,
+                      margin: 0,
+                      letterSpacing: "-0.35px",
+                    }}
+                  >
+                    Other articles
+                  </h2>
+                </div>
 
-                <div style={{ borderTop: "1px solid #eee" }}>
+                <div style={{ padding: "6px 26px" }}>
                   {orphanArticles.map((article, index) => {
                     const isValid = Boolean(article.slug);
 
@@ -345,21 +353,20 @@ export default async function MarketAnalysis() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
-                          gap: 30,
-                          padding: "20px 0",
+                          gap: 24,
+                          padding: "14px 0",
                           borderTop: index === 0 ? "none" : "1px solid #eee",
                           textDecoration: "none",
                           color: "#111",
                           pointerEvents: isValid ? "auto" : "none",
                           opacity: isValid ? 1 : 0.5,
-                          borderRadius: 14,
                         }}
                       >
                         <div>
                           <div
                             style={{
-                              fontSize: 18,
-                              fontWeight: 600,
+                              fontSize: 17,
+                              fontWeight: 650,
                               lineHeight: 1.35,
                             }}
                           >
@@ -370,9 +377,9 @@ export default async function MarketAnalysis() {
                             <div
                               style={{
                                 color: "#666",
-                                fontSize: 14,
-                                lineHeight: 1.5,
-                                marginTop: 6,
+                                fontSize: 13.5,
+                                lineHeight: 1.45,
+                                marginTop: 4,
                               }}
                             >
                               {article.shortAnswer}
@@ -384,8 +391,9 @@ export default async function MarketAnalysis() {
                           className="article-arrow"
                           style={{
                             color: "#168f82",
-                            fontSize: 28,
+                            fontSize: 26,
                             lineHeight: 1,
+                            flexShrink: 0,
                           }}
                         >
                           ›
