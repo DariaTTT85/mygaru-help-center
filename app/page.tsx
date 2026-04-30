@@ -1,382 +1,201 @@
-type Article = {
-  title: string;
-  category: string;
-};
+import Link from "next/link";
 
 const LOGO_SRC = "/myGaru_logo_black.png";
 
-const categoryMeta: Record<
-  string,
-  {
-    label: string;
-    href: string;
-    description: string;
-    iconType: "logo" | "star" | "nodes" | "document";
-  }
-> = {
-  "Product Guide": {
-    label: "Product Guide",
-    href: "/product-guide",
-    description:
-      "Platform functionality, UX/UI logic, identity, billing, DSP, and product cases.",
-    iconType: "logo",
-  },
-  "Market Analysis": {
-    label: "Market Analysis",
-    href: "/market-analysis",
-    description:
-      "Market context, identity strategies, regulatory shifts, and myGaru positioning.",
-    iconType: "star",
-  },
-  "Integrations Guide": {
-    label: "Integrations Guide",
-    href: "/integrations-guide",
-    description:
-      "Deployment, integrations, and technical setup across partner environments.",
-    iconType: "nodes",
-  },
-  "Legal Documents": {
-    label: "Legal Documents",
-    href: "/legal-documents",
-    description:
-      "Legal framework, compliance, and data protection documentation.",
-    iconType: "document",
-  },
-};
-
-async function getArticles(): Promise<Article[]> {
-  const token = process.env.NOTION_TOKEN;
-  const databaseId = process.env.NOTION_DATABASE_ID;
-
-  if (!token || !databaseId) return [];
-
-  const response = await fetch(
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Notion-Version": "2022-06-28",
-      },
-      body: JSON.stringify({
-        filter: {
-          property: "Status",
-          select: { equals: "Ready" },
-        },
-      }),
-      cache: "no-store",
-    }
-  );
-
-  const data = await response.json();
-  if (!response.ok) return [];
-
-  return data.results.map((item: any) => ({
-    title: item.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    category: item.properties?.Category?.select?.name || "Uncategorised",
-  }));
-}
-
-function CardIcon({
-  type,
-}: {
-  type: "logo" | "star" | "nodes" | "document";
-}) {
-  if (type === "logo") {
-    return <img src="/mygaru-icon.png" alt="" style={{ width: 30, height: 30 }} />;
-  }
-
-  if (type === "star") {
-    return <span style={{ fontSize: 22, color: "#111" }}>✦</span>;
-  }
-
-  if (type === "nodes") {
-    return (
-      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-        <circle cx="8" cy="9" r="4" fill="#111" />
-        <circle cx="24" cy="9" r="4" fill="#111" />
-        <circle cx="16" cy="23" r="4" fill="#111" />
-        <path
-          d="M11.5 10.5H20.5M10.5 12.5L14.2 19.2M21.5 12.5L17.8 19.2"
-          stroke="#111"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
-  }
-
+export default function HomePage() {
   return (
-    <svg width="26" height="26" viewBox="0 0 30 30" fill="none">
-      <path
-        d="M8 4H18L23 9V26H8V4Z"
-        fill="none"
-        stroke="#111"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path d="M18 4V10H23" stroke="#111" strokeWidth="2" />
-      <path
-        d="M11.5 15H19.5M11.5 19H19.5"
-        stroke="#111"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
+    <div className="page">
 
-function SearchIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <circle
-        cx="11"
-        cy="11"
-        r="6.5"
-        stroke="#168f82"
-        strokeWidth="2.2"
-      />
-      <path
-        d="M16.2 16.2L20 20"
-        stroke="#168f82"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
+      {/* HEADER */}
+      <header className="header">
+        <div className="header-left">
+          <img src={LOGO_SRC} alt="myGaru" />
+        </div>
 
-export default async function HomePage() {
-  const articles = await getArticles();
+        <a href="https://mygaru.com" className="header-btn">
+          myGaru website
+        </a>
+      </header>
 
-  const groupedArticles = articles.reduce<Record<string, Article[]>>(
-    (acc, article) => {
-      if (!acc[article.category]) acc[article.category] = [];
-      acc[article.category].push(article);
-      return acc;
-    },
-    {}
-  );
+      {/* HERO */}
+      <section className="hero">
+        <h1>Product Documentation</h1>
+        <p>
+          A structured knowledge base for understanding how myGaru operates,
+          connects with partners, and supports privacy-centric data collaboration.
+        </p>
 
-  const categories = Object.keys(categoryMeta);
+        {/* SEARCH (disabled for now) */}
+        <div className="search">
+          🔍 Search (coming soon)
+        </div>
+      </section>
 
-  return (
-    <main
-      style={{
-        fontFamily: "Ubuntu, Arial, sans-serif",
-        background: "#f4f3ef",
-        minHeight: "100vh",
-        color: "#111",
-      }}
-    >
-      <style>{`
-        .home-card {
-          transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+      {/* CARDS */}
+      <section className="cards">
+
+        <Link href="/product-guide" className="card">
+          <div className="icon" />
+          <h3>Product Guide</h3>
+          <p>
+            Platform functionality, UX/UI logic, identity, billing, DSP, and product cases.
+          </p>
+        </Link>
+
+        <Link href="/market-analysis" className="card">
+          <div className="icon" />
+          <h3>Market Analysis</h3>
+          <p>
+            Market context, identity strategies, regulatory shifts, and positioning.
+          </p>
+        </Link>
+
+        <Link href="/integrations-guide" className="card">
+          <div className="icon" />
+          <h3>Integrations Guide</h3>
+          <p>
+            Deployment, integrations, and technical setup across partner environments.
+          </p>
+        </Link>
+
+        <Link href="/legal-documents" className="card">
+          <div className="icon" />
+          <h3>Legal Documents</h3>
+          <p>
+            Legal framework, compliance, and data protection documentation.
+          </p>
+        </Link>
+
+      </section>
+
+      {/* STYLES */}
+      <style jsx>{`
+        :root {
+          --brand-green: #39b7a5;
+          --brand-green-soft: #6fd3c3;
+          --bg: #f4f2ef;
+          --text: #111;
+          --muted: #6b6b6b;
         }
 
-        .home-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 24px 52px rgba(0,0,0,0.14);
-          border-color: rgba(68,207,189,0.7);
+        .page {
+          background: var(--bg);
+          min-height: 100vh;
+          font-family: Inter, sans-serif;
         }
 
-        .card-arrow {
-          transition: transform 180ms ease;
+        /* HEADER */
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 40px;
+        }
+
+        .header-left img {
+          height: 34px;
+        }
+
+        .header-btn {
+          background: #111;
+          color: #fff;
+          padding: 10px 18px;
+          border-radius: 999px;
+          text-decoration: none;
+          font-size: 14px;
+        }
+
+        /* HERO */
+        .hero {
+          background: linear-gradient(
+            180deg,
+            var(--brand-green-soft) 0%,
+            var(--brand-green) 60%,
+            rgba(255,255,255,0) 100%
+          );
+          text-align: center;
+          padding: 60px 20px 80px;
+        }
+
+        .hero h1 {
+          font-size: 56px;
+          margin-bottom: 16px;
+          color: var(--text);
+        }
+
+        .hero p {
+          max-width: 700px;
+          margin: 0 auto 30px;
+          color: var(--text);
+          opacity: 0.8;
+          font-size: 16px;
+        }
+
+        .search {
           display: inline-block;
+          background: #fff;
+          padding: 12px 24px;
+          border-radius: 999px;
+          color: var(--muted);
+          font-size: 14px;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
-        .home-card:hover .card-arrow {
-          transform: translateX(5px);
+        /* CARDS */
+        .cards {
+          margin-top: -60px;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 24px;
+          padding: 0 40px 80px;
+        }
+
+        .card {
+          background: #fff;
+          padding: 24px;
+          border-radius: 18px;
+          text-decoration: none;
+          color: inherit;
+          transition: all 0.2s ease;
+          box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+        }
+
+        .card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+        }
+
+        .icon {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: var(--brand-green);
+          margin-bottom: 16px;
+        }
+
+        .card h3 {
+          font-size: 20px;
+          margin-bottom: 10px;
+        }
+
+        .card p {
+          font-size: 14px;
+          color: var(--muted);
+        }
+
+        @media (max-width: 900px) {
+          .cards {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .cards {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
 
-      <div
-        style={{
-          background:
-            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 54%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
-          padding: "22px 60px 112px",
-        }}
-      >
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 46,
-          }}
-        >
-          <a href="/" style={{ textDecoration: "none" }}>
-            <img
-              src={LOGO_SRC}
-              alt="myGaru"
-              style={{
-                height: 42,
-                width: "auto",
-                display: "block",
-              }}
-            />
-          </a>
-
-          <a
-            href="https://mygaru.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              background: "#111",
-              color: "white",
-              padding: "12px 22px",
-              borderRadius: 999,
-              textDecoration: "none",
-              fontWeight: 700,
-            }}
-          >
-            myGaru website
-          </a>
-        </header>
-
-        <div style={{ textAlign: "center" }}>
-          <h1
-            style={{
-              fontSize: 54,
-              lineHeight: 1.05,
-              margin: "0 0 16px",
-              letterSpacing: "-1.4px",
-            }}
-          >
-            Product Documentation
-          </h1>
-
-          <p
-            style={{
-              fontSize: 18,
-              lineHeight: 1.45,
-              maxWidth: 760,
-              margin: "0 auto",
-              color: "#111",
-              fontWeight: 500,
-            }}
-          >
-            A structured knowledge base for understanding how myGaru operates,
-            connects with partners, and supports privacy-centric data collaboration.
-          </p>
-        </div>
-      </div>
-
-      <section
-        style={{
-          maxWidth: 1100,
-          margin: "-64px auto 0",
-          padding: "0 24px 80px",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 20,
-          }}
-        >
-          {categories.map((category) => {
-            const meta = categoryMeta[category];
-            const count = groupedArticles[category]?.length || 0;
-
-            return (
-              <a
-                key={category}
-                href={meta.href}
-                className="home-card"
-                style={{
-                  background: "white",
-                  borderRadius: 24,
-                  padding: 24,
-                  border: "1px solid #e4e1d8",
-                  textDecoration: "none",
-                  color: "#111",
-                  minHeight: 260,
-                  display: "flex",
-                  flexDirection: "column",
-                  boxShadow: "0 12px 28px rgba(0,0,0,0.08)",
-                }}
-              >
-                <div
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 16,
-                    background: "linear-gradient(135deg, #44cfbd, #2bb8a5)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 18,
-                  }}
-                >
-                  <CardIcon type={meta.iconType} />
-                </div>
-
-                <h2
-                  style={{
-                    fontSize: 23,
-                    lineHeight: 1.15,
-                    margin: "0 0 14px",
-                    letterSpacing: "-0.3px",
-                  }}
-                >
-                  {meta.label}
-                </h2>
-
-                <p
-                  style={{
-                    color: "#555",
-                    fontSize: 14.5,
-                    lineHeight: 1.45,
-                    margin: "0 0 20px",
-                    flex: 1,
-                  }}
-                >
-                  {meta.description}
-                </p>
-
-                <p
-                  style={{
-                    color: "#168f82",
-                    fontWeight: 700,
-                    fontSize: 15,
-                    margin: 0,
-                  }}
-                >
-                  {count} {count === 1 ? "document" : "documents"}{" "}
-                  <span className="card-arrow">→</span>
-                </p>
-              </a>
-            );
-          })}
-        </div>
-
-        <div
-          aria-disabled="true"
-          style={{
-            margin: "34px auto 0",
-            maxWidth: 520,
-            background: "white",
-            padding: "14px 18px",
-            borderRadius: 18,
-            border: "1px solid #e4e1d8",
-            boxShadow: "0 8px 22px rgba(0,0,0,0.04)",
-            color: "#777",
-            fontSize: 14,
-            textAlign: "left",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            cursor: "not-allowed",
-            opacity: 0.92,
-          }}
-        >
-          <SearchIcon />
-          <span>Search will be added later</span>
-        </div>
-      </section>
-    </main>
+    </div>
   );
 }
