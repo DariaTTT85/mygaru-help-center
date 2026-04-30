@@ -129,7 +129,7 @@ export default async function MarketAnalysis() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 36,
+            marginBottom: 46,
           }}
         >
           <a href="/" className="top-link" style={{ textDecoration: "none" }}>
@@ -144,52 +144,24 @@ export default async function MarketAnalysis() {
             />
           </a>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <a
-              href="/"
-              style={{
-                color: "#111",
-                textDecoration: "none",
-                fontWeight: 700,
-                fontSize: 15,
-              }}
-            >
-              Help Center Home
-            </a>
-
-            <a
-              href="https://mygaru.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                background: "#111",
-                color: "white",
-                padding: "12px 22px",
-                borderRadius: 999,
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
-            >
-              myGaru website
-            </a>
-          </div>
+          <a
+            href="https://mygaru.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: "#111",
+              color: "white",
+              padding: "12px 22px",
+              borderRadius: 999,
+              textDecoration: "none",
+              fontWeight: 700,
+            }}
+          >
+            myGaru website
+          </a>
         </header>
 
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              marginBottom: 18,
-              opacity: 0.76,
-            }}
-          >
-            <a href="/" style={{ color: "#111", textDecoration: "none" }}>
-              Home
-            </a>{" "}
-            › Market Analysis
-          </div>
-
           <h1
             style={{
               fontSize: 52,
@@ -231,7 +203,7 @@ export default async function MarketAnalysis() {
               border: "1px solid #dedbd2",
               borderRadius: 24,
               padding: "24px 28px",
-              boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+              boxShadow: "0 14px 36px rgba(0,0,0,0.08)",
               color: "#666",
               fontSize: 16,
             }}
