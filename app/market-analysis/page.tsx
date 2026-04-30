@@ -52,40 +52,16 @@ async function getMarketArticles(): Promise<Article[]> {
   }));
 }
 
-function getParentLabel(title: string) {
-  const lower = title.toLowerCase();
-
-  if (lower.includes("identity")) return "Identity";
-  if (lower.includes("dcr") || lower.includes("data clean room")) return "DCR";
-  if (lower.includes("retail")) return "Retail Media";
-  if (lower.includes("consent")) return "Consent";
-  if (lower.includes("telecom")) return "Telecom";
-
-  return "Market";
-}
-
 export default async function MarketAnalysis() {
   const articles = await getMarketArticles();
 
-  const articleMap = new Map(articles.map((article) => [article.id, article]));
-
-  const parents = articles
-    .filter((article) => article.parentIds.length !== 1)
-    .sort((a, b) => a.order - b.order);
-
-  const children = articles
-    .filter((article) => article.parentIds.length === 1)
-    .sort((a, b) => a.order - b.order);
+  const parents = articles.filter((a) => a.parentIds.length !== 1);
+  const children = articles.filter((a) => a.parentIds.length === 1);
 
   const groups = parents.map((parent) => ({
     parent,
-    articles: children.filter((child) => child.parentIds.includes(parent.id)),
+    articles: children.filter((c) => c.parentIds.includes(parent.id)),
   }));
-
-  const orphanArticles = children.filter((child) => {
-    const parentId = child.parentIds[0];
-    return !articleMap.has(parentId);
-  });
 
   return (
     <main
@@ -98,7 +74,7 @@ export default async function MarketAnalysis() {
     >
       <style>{`
         .article-row {
-          transition: transform 140ms ease, background 140ms ease;
+          transition: all 140ms ease;
         }
 
         .article-row:hover {
@@ -106,20 +82,20 @@ export default async function MarketAnalysis() {
           background: #f8f7f3;
         }
 
+        .article-arrow {
+          transition: transform 140ms ease;
+        }
+
         .article-row:hover .article-arrow {
           transform: translateX(4px);
         }
-
-        .article-arrow {
-          display: inline-block;
-          transition: transform 140ms ease;
-        }
       `}</style>
 
+      {/* HEADER */}
       <div
         style={{
           background:
-            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 54%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
+            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 60%, rgba(244,243,239,1) 100%)",
           padding: "22px 60px 96px",
         }}
       >
@@ -131,22 +107,12 @@ export default async function MarketAnalysis() {
             marginBottom: 42,
           }}
         >
-          <a href="/" style={{ textDecoration: "none" }}>
-            <img
-              src={LOGO_SRC}
-              alt="myGaru"
-              style={{
-                height: 42,
-                width: "auto",
-                display: "block",
-              }}
-            />
+          <a href="/">
+            <img src={LOGO_SRC} style={{ height: 42 }} />
           </a>
 
           <a
-            href="https://mygaru.com"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/"
             style={{
               background: "#111",
               color: "white",
@@ -156,38 +122,22 @@ export default async function MarketAnalysis() {
               fontWeight: 700,
             }}
           >
-            myGaru website
+            Help Center Home
           </a>
         </header>
 
         <div style={{ maxWidth: 980, margin: "0 auto" }}>
-          <h1
-            style={{
-              fontSize: 54,
-              lineHeight: 1.05,
-              margin: "0 0 14px",
-              letterSpacing: "-1.4px",
-            }}
-          >
+          <h1 style={{ fontSize: 54, marginBottom: 12 }}>
             Market Analysis
           </h1>
 
-          <p
-            style={{
-              fontSize: 18,
-              lineHeight: 1.45,
-              maxWidth: 760,
-              margin: 0,
-              color: "#111",
-              fontWeight: 500,
-            }}
-          >
-            Market context, identity strategies, regulatory shifts, and myGaru
-            positioning.
+          <p style={{ fontSize: 18, maxWidth: 720 }}>
+            Market context, identity strategies, and myGaru positioning.
           </p>
         </div>
       </div>
 
+      {/* CONTENT */}
       <section
         style={{
           maxWidth: 980,
@@ -195,273 +145,91 @@ export default async function MarketAnalysis() {
           padding: "0 24px 80px",
         }}
       >
-        {groups.length === 0 && orphanArticles.length === 0 ? (
+        {groups.map((group) => (
           <div
+            key={group.parent.id}
             style={{
               background: "white",
-              border: "1px solid #e4e1d8",
-              borderRadius: 24,
-              padding: "24px 28px",
+              borderRadius: 22,
+              overflow: "hidden",
               boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
-              color: "#666",
-              fontSize: 16,
+              marginBottom: 14,
             }}
           >
-            No articles yet.
-          </div>
-        ) : (
-          <>
-            {groups.map((group) => {
-              const label = getParentLabel(group.parent.title);
-
-              return (
-                <div
-                  key={group.parent.id}
-                  style={{
-                    background: "white",
-                    border: "1px solid #e4e1d8",
-                    borderRadius: 24,
-                    overflow: "hidden",
-                    boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
-                    marginBottom: 12,
-                  }}
-                >
-                  <div
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #f7f6f2 0%, #ffffff 58%, #f0efea 100%)",
-                      borderBottom: "1px solid #e4e1d8",
-                      padding: "14px 22px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <span
-                      style={{
-                        background: "#44cfbd",
-                        color: "#111",
-                        borderRadius: 999,
-                        padding: "5px 10px",
-                        fontSize: 13,
-                        lineHeight: 1,
-                        fontWeight: 700,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {label}
-                    </span>
-
-                    <h2
-                      style={{
-                        fontSize: 21,
-                        lineHeight: 1.25,
-                        margin: 0,
-                        letterSpacing: "-0.25px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {group.parent.title}
-                    </h2>
-                  </div>
-
-                  <div style={{ padding: "2px 22px" }}>
-                    {group.articles.length === 0 ? (
-                      <div
-                        style={{
-                          padding: "12px 0",
-                          color: "#777",
-                          fontSize: 15,
-                        }}
-                      >
-                        Articles will be added later.
-                      </div>
-                    ) : (
-                      group.articles.map((article, index) => {
-                        const isValid = Boolean(article.slug);
-
-                        return (
-                          <a
-                            key={article.id}
-                            href={isValid ? `/articles/${article.slug}` : "#"}
-                            className="article-row"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              gap: 20,
-                              padding: "10px 0",
-                              borderTop:
-                                index === 0 ? "none" : "1px solid #eeeeee",
-                              textDecoration: "none",
-                              color: "#111",
-                              pointerEvents: isValid ? "auto" : "none",
-                              opacity: isValid ? 1 : 0.5,
-                            }}
-                          >
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: 18,
-                                  fontWeight: 500,
-                                  lineHeight: 1.32,
-                                  letterSpacing: "-0.1px",
-                                }}
-                              >
-                                {article.title}
-                              </div>
-
-                              {article.shortAnswer && (
-                                <div
-                                  style={{
-                                    color: "#666",
-                                    fontSize: 13.5,
-                                    lineHeight: 1.38,
-                                    marginTop: 3,
-                                  }}
-                                >
-                                  {article.shortAnswer}
-                                </div>
-                              )}
-                            </div>
-
-                            <span
-                              className="article-arrow"
-                              style={{
-                                color: "#168f82",
-                                fontSize: 24,
-                                lineHeight: 1,
-                                flexShrink: 0,
-                              }}
-                            >
-                              ›
-                            </span>
-                          </a>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-
-            {orphanArticles.length > 0 && (
-              <div
+            {/* 🔥 НОВАЯ ПЛАШКА */}
+            <div
+              style={{
+                background:
+                  "linear-gradient(135deg, #f5f5f2 0%, #ffffff 50%, #f0efea 100%)",
+                padding: "14px 22px",
+                borderBottom: "1px solid #e4e1d8",
+              }}
+            >
+              <h2
                 style={{
-                  background: "white",
-                  border: "1px solid #e4e1d8",
-                  borderRadius: 24,
-                  overflow: "hidden",
-                  boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
-                  marginBottom: 12,
+                  margin: 0,
+                  fontSize: 20,
+                  fontWeight: 600,
+                  color: "#1fbfa9", // фирменный
                 }}
               >
-                <div
+                {group.parent.title}
+              </h2>
+            </div>
+
+            {/* ARTICLES */}
+            <div style={{ padding: "4px 20px" }}>
+              {group.articles.map((article, index) => (
+                <a
+                  key={article.id}
+                  href={`/articles/${article.slug}`}
+                  className="article-row"
                   style={{
-                    background:
-                      "linear-gradient(135deg, #f7f6f2 0%, #ffffff 58%, #f0efea 100%)",
-                    borderBottom: "1px solid #e4e1d8",
-                    padding: "14px 22px",
                     display: "flex",
-                    alignItems: "center",
-                    gap: 12,
+                    justifyContent: "space-between",
+                    padding: "10px 0",
+                    borderTop: index === 0 ? "none" : "1px solid #eee",
+                    textDecoration: "none",
+                    color: "#111",
                   }}
                 >
-                  <span
-                    style={{
-                      background: "#44cfbd",
-                      color: "#111",
-                      borderRadius: 999,
-                      padding: "5px 10px",
-                      fontSize: 13,
-                      lineHeight: 1,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                    }}
-                  >
-                    Market
-                  </span>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {article.title}
+                    </div>
 
-                  <h2
-                    style={{
-                      fontSize: 21,
-                      lineHeight: 1.25,
-                      margin: 0,
-                      letterSpacing: "-0.25px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Other articles
-                  </h2>
-                </div>
-
-                <div style={{ padding: "2px 22px" }}>
-                  {orphanArticles.map((article, index) => {
-                    const isValid = Boolean(article.slug);
-
-                    return (
-                      <a
-                        key={article.id}
-                        href={isValid ? `/articles/${article.slug}` : "#"}
-                        className="article-row"
+                    {article.shortAnswer && (
+                      <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 20,
-                          padding: "10px 0",
-                          borderTop: index === 0 ? "none" : "1px solid #eee",
-                          textDecoration: "none",
-                          color: "#111",
-                          pointerEvents: isValid ? "auto" : "none",
-                          opacity: isValid ? 1 : 0.5,
+                          fontSize: 13,
+                          color: "#666",
+                          marginTop: 3,
                         }}
                       >
-                        <div>
-                          <div
-                            style={{
-                              fontSize: 18,
-                              fontWeight: 500,
-                              lineHeight: 1.32,
-                              letterSpacing: "-0.1px",
-                            }}
-                          >
-                            {article.title}
-                          </div>
+                        {article.shortAnswer}
+                      </div>
+                    )}
+                  </div>
 
-                          {article.shortAnswer && (
-                            <div
-                              style={{
-                                color: "#666",
-                                fontSize: 13.5,
-                                lineHeight: 1.38,
-                                marginTop: 3,
-                              }}
-                            >
-                              {article.shortAnswer}
-                            </div>
-                          )}
-                        </div>
-
-                        <span
-                          className="article-arrow"
-                          style={{
-                            color: "#168f82",
-                            fontSize: 24,
-                            lineHeight: 1,
-                            flexShrink: 0,
-                          }}
-                        >
-                          ›
-                        </span>
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </>
-        )}
+                  <span
+                    className="article-arrow"
+                    style={{
+                      color: "#168f82",
+                      fontSize: 22,
+                    }}
+                  >
+                    ›
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
       </section>
     </main>
   );
