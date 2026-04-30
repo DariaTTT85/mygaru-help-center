@@ -81,9 +81,7 @@ async function getArticle(slug: string): Promise<Article | null> {
   };
 }
 
-async function getArticlesForNavigation(
-  article: Article
-): Promise<Article[]> {
+async function getArticlesForNavigation(article: Article): Promise<Article[]> {
   const databaseId = process.env.NOTION_DATABASE_ID;
 
   if (!databaseId || !article.category) return [];
@@ -252,7 +250,12 @@ function renderTable(block: NotionBlock) {
             const isHeader = hasColumnHeader && rowIndex === 0;
 
             return (
-              <tr key={row.id} style={{ background: isHeader ? "#f7f6f2" : "white" }}>
+              <tr
+                key={row.id}
+                style={{
+                  background: isHeader ? "#f7f6f2" : "white",
+                }}
+              >
                 {cells.map((cell: any[], cellIndex: number) => {
                   const CellTag = isHeader ? "th" : "td";
 
@@ -262,9 +265,13 @@ function renderTable(block: NotionBlock) {
                       style={{
                         padding: "12px 14px",
                         borderBottom:
-                          rowIndex === rows.length - 1 ? "none" : "1px solid #eee",
+                          rowIndex === rows.length - 1
+                            ? "none"
+                            : "1px solid #eee",
                         borderRight:
-                          cellIndex === cells.length - 1 ? "none" : "1px solid #eee",
+                          cellIndex === cells.length - 1
+                            ? "none"
+                            : "1px solid #eee",
                         textAlign: "left",
                         verticalAlign: "top",
                         fontWeight: isHeader ? 700 : 400,
@@ -451,6 +458,7 @@ function renderBlock(block: NotionBlock, level = 0) {
   }
 
   if (type === "table") return renderTable(block);
+
   if (type === "table_row") return null;
 
   if (type === "image") {
@@ -458,7 +466,13 @@ function renderBlock(block: NotionBlock, level = 0) {
     const caption = getPlainText(value.caption || []);
 
     return (
-      <figure style={{ margin: "32px auto", textAlign: "center", maxWidth: "100%" }}>
+      <figure
+        style={{
+          margin: "32px auto",
+          textAlign: "center",
+          maxWidth: "100%",
+        }}
+      >
         <img
           src={src}
           alt={caption || ""}
@@ -698,6 +712,7 @@ export default async function ArticlePage({
 
   const blocks = await getBlocksWithChildren(article.id);
   const navArticles = await getArticlesForNavigation(article);
+
   const currentIndex = navArticles.findIndex((item) => item.id === article.id);
   const nextArticle =
     currentIndex >= 0 && currentIndex < navArticles.length - 1
@@ -728,9 +743,9 @@ export default async function ArticlePage({
         }
 
         .floating-back:hover {
-          transform: translateY(-50%) translateX(-2px) scale(1.06);
+          transform: translateY(-50%) translateX(-3px) scale(1.06);
           background: #44cfbd;
-          box-shadow: 0 16px 34px rgba(0,0,0,0.18);
+          box-shadow: 0 18px 38px rgba(0,0,0,0.18);
         }
 
         .floating-back:hover span {
@@ -754,26 +769,34 @@ export default async function ArticlePage({
         title={`Back to ${article.category}`}
         style={{
           position: "fixed",
-          left: 22,
+          left: 26,
           top: "50%",
           transform: "translateY(-50%)",
-          minWidth: 52,
-          height: 52,
-          borderRadius: 999,
-          background: "white",
+          width: 54,
+          height: 54,
+          borderRadius: "50%",
+          background: "linear-gradient(135deg, #ffffff 0%, #f7f6f2 100%)",
           border: "1px solid #dedbd2",
-          boxShadow: "0 10px 28px rgba(0,0,0,0.12)",
+          boxShadow: "0 14px 32px rgba(0,0,0,0.14)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           color: "#008f82",
-          fontSize: 30,
-          fontWeight: 800,
           textDecoration: "none",
           zIndex: 50,
         }}
       >
-        <span style={{ color: "#008f82", lineHeight: 1 }}>←</span>
+        <span
+          style={{
+            fontSize: 34,
+            fontWeight: 900,
+            lineHeight: 1,
+            color: "#008f82",
+            transform: "translateY(-1px)",
+          }}
+        >
+          ←
+        </span>
       </a>
 
       <div
@@ -913,7 +936,8 @@ export default async function ArticlePage({
                 display: "block",
                 textDecoration: "none",
                 color: "#111",
-                background: "#f7f6f2",
+                background:
+                  "linear-gradient(135deg, rgba(68,207,189,0.10), #ffffff 70%)",
                 border: "1px solid #e4e1d8",
                 borderRadius: 18,
                 padding: "18px 20px",
@@ -929,7 +953,14 @@ export default async function ArticlePage({
               >
                 Back to
               </div>
-              <div style={{ fontSize: 17, fontWeight: 700 }}>
+
+              <div
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  color: "#087f75",
+                }}
+              >
                 ← {article.category}
               </div>
             </a>
@@ -960,7 +991,13 @@ export default async function ArticlePage({
                 >
                   Next
                 </div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: "#087f75" }}>
+                <div
+                  style={{
+                    fontSize: 17,
+                    fontWeight: 700,
+                    color: "#087f75",
+                  }}
+                >
                   {nextArticle.title} →
                 </div>
               </a>
