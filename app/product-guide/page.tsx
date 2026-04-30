@@ -60,24 +60,24 @@ export default async function ProductGuide() {
       }}
     >
       <style>{`
-        .article-row {
+        .document-row {
           transition: background 150ms ease, color 150ms ease, transform 150ms ease;
         }
 
-        .article-row:hover {
+        .document-row:hover {
           background: rgba(68, 207, 189, 0.10);
           transform: translateX(2px);
         }
 
-        .article-row:hover .article-title {
+        .document-row:hover .document-title {
           color: #008f82;
         }
 
-        .article-row:hover .article-arrow {
+        .document-row:hover .document-arrow {
           transform: translateX(4px);
         }
 
-        .article-arrow {
+        .document-arrow {
           display: inline-block;
           transition: transform 150ms ease;
         }
@@ -104,7 +104,7 @@ export default async function ProductGuide() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 36,
+            marginBottom: 46,
           }}
         >
           <a href="/" className="top-link" style={{ textDecoration: "none" }}>
@@ -119,52 +119,24 @@ export default async function ProductGuide() {
             />
           </a>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <a
-              href="/"
-              style={{
-                color: "#111",
-                textDecoration: "none",
-                fontWeight: 700,
-                fontSize: 15,
-              }}
-            >
-              Help Center Home
-            </a>
-
-            <a
-              href="https://mygaru.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                background: "#111",
-                color: "white",
-                padding: "12px 22px",
-                borderRadius: 999,
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
-            >
-              myGaru website
-            </a>
-          </div>
+          <a
+            href="https://mygaru.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: "#111",
+              color: "white",
+              padding: "12px 22px",
+              borderRadius: 999,
+              textDecoration: "none",
+              fontWeight: 700,
+            }}
+          >
+            myGaru website
+          </a>
         </header>
 
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              marginBottom: 18,
-              opacity: 0.76,
-            }}
-          >
-            <a href="/" style={{ color: "#111", textDecoration: "none" }}>
-              Home
-            </a>{" "}
-            › Product Guide
-          </div>
-
           <h1
             style={{
               fontSize: 52,
@@ -206,107 +178,84 @@ export default async function ProductGuide() {
             borderRadius: 24,
             overflow: "hidden",
             boxShadow: "0 14px 36px rgba(0,0,0,0.08)",
+            padding: "8px 18px",
           }}
         >
-          <div
-            style={{
-              background:
-                "linear-gradient(135deg, #eef7f4 0%, #f8f7f3 55%, #ecebe5 100%)",
-              borderBottom: "1px solid #dedbd2",
-              padding: "18px 24px",
-            }}
-          >
-            <h2
+          {articles.length === 0 ? (
+            <div
               style={{
-                fontSize: 23,
-                lineHeight: 1.25,
-                margin: 0,
-                letterSpacing: "-0.3px",
-                fontWeight: 600,
-                color: "#087f75",
+                padding: "18px 14px",
+                color: "#777",
+                fontSize: 15,
               }}
             >
-              Product Guide documents
-            </h2>
-          </div>
+              No documents yet.
+            </div>
+          ) : (
+            articles.map((article, index) => {
+              const isValid = Boolean(article.slug);
 
-          <div style={{ padding: "6px 18px 8px" }}>
-            {articles.length === 0 ? (
-              <div
-                style={{
-                  padding: "14px 8px",
-                  color: "#777",
-                  fontSize: 15,
-                }}
-              >
-                No documents yet.
-              </div>
-            ) : (
-              articles.map((article, index) => {
-                const isValid = Boolean(article.slug);
-
-                return (
-                  <a
-                    key={article.slug || index}
-                    href={isValid ? `/articles/${article.slug}` : "#"}
-                    className="article-row"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 20,
-                      padding: "12px 14px",
-                      borderTop: index === 0 ? "none" : "1px solid #eeeeee",
-                      textDecoration: "none",
-                      color: "#252525",
-                      pointerEvents: isValid ? "auto" : "none",
-                      opacity: isValid ? 1 : 0.5,
-                      borderRadius: 12,
-                    }}
-                  >
-                    <div>
-                      <div
-                        className="article-title"
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 400,
-                          lineHeight: 1.35,
-                          letterSpacing: "-0.1px",
-                        }}
-                      >
-                        {article.title}
-                      </div>
-
-                      {article.shortAnswer && (
-                        <div
-                          style={{
-                            color: "#6a6a6a",
-                            fontSize: 13.5,
-                            lineHeight: 1.4,
-                            marginTop: 3,
-                          }}
-                        >
-                          {article.shortAnswer}
-                        </div>
-                      )}
-                    </div>
-
-                    <span
-                      className="article-arrow"
+              return (
+                <a
+                  key={article.slug || index}
+                  href={isValid ? `/articles/${article.slug}` : "#"}
+                  className="document-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 20,
+                    padding: "15px 14px",
+                    borderTop: index === 0 ? "none" : "1px solid #eeeeee",
+                    textDecoration: "none",
+                    color: "#252525",
+                    pointerEvents: isValid ? "auto" : "none",
+                    opacity: isValid ? 1 : 0.5,
+                    borderRadius: 12,
+                  }}
+                >
+                  <div>
+                    <div
+                      className="document-title"
                       style={{
-                        color: "#008f82",
-                        fontSize: 24,
-                        lineHeight: 1,
-                        flexShrink: 0,
+                        fontSize: 19,
+                        fontWeight: 500,
+                        lineHeight: 1.35,
+                        letterSpacing: "-0.1px",
                       }}
                     >
-                      ›
-                    </span>
-                  </a>
-                );
-              })
-            )}
-          </div>
+                      {article.title}
+                    </div>
+
+                    {article.shortAnswer && (
+                      <div
+                        style={{
+                          color: "#6a6a6a",
+                          fontSize: 13.5,
+                          lineHeight: 1.4,
+                          marginTop: 3,
+                        }}
+                      >
+                        {article.shortAnswer}
+                      </div>
+                    )}
+                  </div>
+
+                  <span
+                    className="document-arrow"
+                    style={{
+                      color: "#008f82",
+                      fontSize: 24,
+                      lineHeight: 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    ›
+                  </span>
+                </a>
+              );
+            })
+          )}
         </div>
       </section>
     </main>
