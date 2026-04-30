@@ -86,11 +86,12 @@ export default async function MarketAnalysis() {
     >
       <style>{`
         .article-row {
-          transition: background 150ms ease, color 150ms ease;
+          transition: background 150ms ease, color 150ms ease, transform 150ms ease;
         }
 
         .article-row:hover {
           background: rgba(68, 207, 189, 0.10);
+          transform: translateX(2px);
         }
 
         .article-row:hover .article-title {
@@ -105,13 +106,22 @@ export default async function MarketAnalysis() {
           display: inline-block;
           transition: transform 150ms ease;
         }
+
+        .top-link {
+          transition: opacity 150ms ease, transform 150ms ease;
+        }
+
+        .top-link:hover {
+          opacity: 0.75;
+          transform: translateY(-1px);
+        }
       `}</style>
 
       <div
         style={{
           background:
-            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 54%, rgba(68,207,189,0.58) 72%, rgba(244,243,239,0.96) 91%, #f4f3ef 100%)",
-          padding: "22px 60px 104px",
+            "linear-gradient(180deg, #a7eadf 0%, #44cfbd 50%, rgba(68,207,189,0.54) 70%, rgba(244,243,239,0.96) 92%, #f4f3ef 100%)",
+          padding: "22px 60px 96px",
         }}
       >
         <header
@@ -119,10 +129,10 @@ export default async function MarketAnalysis() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 46,
+            marginBottom: 36,
           }}
         >
-          <a href="/" style={{ textDecoration: "none" }}>
+          <a href="/" className="top-link" style={{ textDecoration: "none" }}>
             <img
               src={LOGO_SRC}
               alt="myGaru"
@@ -134,27 +144,55 @@ export default async function MarketAnalysis() {
             />
           </a>
 
-          <a
-            href="https://mygaru.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              background: "#111",
-              color: "white",
-              padding: "12px 22px",
-              borderRadius: 999,
-              textDecoration: "none",
-              fontWeight: 700,
-            }}
-          >
-            myGaru website
-          </a>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <a
+              href="/"
+              style={{
+                color: "#111",
+                textDecoration: "none",
+                fontWeight: 700,
+                fontSize: 15,
+              }}
+            >
+              Help Center Home
+            </a>
+
+            <a
+              href="https://mygaru.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: "#111",
+                color: "white",
+                padding: "12px 22px",
+                borderRadius: 999,
+                textDecoration: "none",
+                fontWeight: 700,
+              }}
+            >
+              myGaru website
+            </a>
+          </div>
         </header>
 
-        <div style={{ maxWidth: 980, margin: "0 auto" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto" }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              marginBottom: 18,
+              opacity: 0.76,
+            }}
+          >
+            <a href="/" style={{ color: "#111", textDecoration: "none" }}>
+              Home
+            </a>{" "}
+            › Market Analysis
+          </div>
+
           <h1
             style={{
-              fontSize: 54,
+              fontSize: 52,
               lineHeight: 1.05,
               margin: "0 0 14px",
               letterSpacing: "-1.4px",
@@ -167,7 +205,7 @@ export default async function MarketAnalysis() {
             style={{
               fontSize: 18,
               lineHeight: 1.45,
-              maxWidth: 760,
+              maxWidth: 700,
               margin: 0,
               color: "#111",
               fontWeight: 500,
@@ -181,8 +219,8 @@ export default async function MarketAnalysis() {
 
       <section
         style={{
-          maxWidth: 980,
-          margin: "-56px auto 0",
+          maxWidth: 860,
+          margin: "-48px auto 0",
           padding: "0 24px 80px",
         }}
       >
@@ -208,16 +246,16 @@ export default async function MarketAnalysis() {
                 style={{
                   background: "white",
                   border: "1px solid #dedbd2",
-                  borderRadius: 22,
+                  borderRadius: 24,
                   overflow: "hidden",
-                  boxShadow: "0 12px 30px rgba(0,0,0,0.075)",
-                  marginBottom: 16,
+                  boxShadow: "0 14px 36px rgba(0,0,0,0.08)",
+                  marginBottom: 18,
                 }}
               >
                 <div
                   style={{
                     background:
-                      "linear-gradient(135deg, #eef7f4 0%, #f7f6f2 52%, #e8ebe6 100%)",
+                      "linear-gradient(135deg, #eef7f4 0%, #f8f7f3 55%, #ecebe5 100%)",
                     borderBottom: "1px solid #dedbd2",
                     padding: "18px 24px",
                   }}
@@ -236,11 +274,11 @@ export default async function MarketAnalysis() {
                   </h2>
                 </div>
 
-                <div style={{ padding: "8px 24px 10px" }}>
+                <div style={{ padding: "6px 18px 8px" }}>
                   {group.articles.length === 0 ? (
                     <div
                       style={{
-                        padding: "14px 0",
+                        padding: "14px 8px",
                         color: "#777",
                         fontSize: 15,
                       }}
@@ -265,7 +303,7 @@ export default async function MarketAnalysis() {
                             borderTop:
                               index === 0 ? "none" : "1px solid #eeeeee",
                             textDecoration: "none",
-                            color: "#222",
+                            color: "#252525",
                             pointerEvents: isValid ? "auto" : "none",
                             opacity: isValid ? 1 : 0.5,
                             borderRadius: 12,
@@ -322,16 +360,16 @@ export default async function MarketAnalysis() {
                 style={{
                   background: "white",
                   border: "1px solid #dedbd2",
-                  borderRadius: 22,
+                  borderRadius: 24,
                   overflow: "hidden",
-                  boxShadow: "0 12px 30px rgba(0,0,0,0.075)",
-                  marginBottom: 16,
+                  boxShadow: "0 14px 36px rgba(0,0,0,0.08)",
+                  marginBottom: 18,
                 }}
               >
                 <div
                   style={{
                     background:
-                      "linear-gradient(135deg, #eef7f4 0%, #f7f6f2 52%, #e8ebe6 100%)",
+                      "linear-gradient(135deg, #eef7f4 0%, #f8f7f3 55%, #ecebe5 100%)",
                     borderBottom: "1px solid #dedbd2",
                     padding: "18px 24px",
                   }}
@@ -350,7 +388,7 @@ export default async function MarketAnalysis() {
                   </h2>
                 </div>
 
-                <div style={{ padding: "8px 24px 10px" }}>
+                <div style={{ padding: "6px 18px 8px" }}>
                   {orphanArticles.map((article, index) => {
                     const isValid = Boolean(article.slug);
 
@@ -367,7 +405,7 @@ export default async function MarketAnalysis() {
                           padding: "12px 14px",
                           borderTop: index === 0 ? "none" : "1px solid #eee",
                           textDecoration: "none",
-                          color: "#222",
+                          color: "#252525",
                           pointerEvents: isValid ? "auto" : "none",
                           opacity: isValid ? 1 : 0.5,
                           borderRadius: 12,
