@@ -1,59 +1,11 @@
-type Article = {
-  id: string;
-  title: string;
-  shortAnswer: string;
-  slug: string;
-  order: number;
-  parentIds: string[];
-};
+import { getArticles, type Article } from "../../lib/notion";
 
 const LOGO_SRC = "/myGaru_logo_black.png";
 
-async function getMarketArticles(): Promise<Article[]> {
-  const token = process.env.NOTION_TOKEN;
-  const databaseId = process.env.NOTION_DATABASE_ID;
-
-  if (!token || !databaseId) return [];
-
-  const response = await fetch(
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Notion-Version": "2022-06-28",
-      },
-      body: JSON.stringify({
-        filter: {
-          and: [
-            { property: "Status", select: { equals: "Ready" } },
-            { property: "Category", select: { equals: "Market Analysis" } },
-          ],
-        },
-        sorts: [{ property: "Order", direction: "ascending" }],
-      }),
-      cache: "no-store",
-    }
-  );
-
-  const data = await response.json();
-  if (!response.ok) return [];
-
-  return data.results.map((item: any) => ({
-    id: item.id,
-    title: item.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    shortAnswer:
-      item.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
-    slug: item.properties?.Slug?.rich_text?.[0]?.plain_text || "",
-    order: item.properties?.Order?.number || 999,
-    parentIds:
-      item.properties?.["Parent article"]?.relation?.map((r: any) => r.id) || [],
-  }));
-}
-
 export default async function MarketAnalysis() {
-  const articles = await getMarketArticles();
+  // null (сбой Notion) сводим к пустому списку.
+  const articles: Article[] =
+    (await getArticles({ category: "Market Analysis" })) ?? [];
 
   const articleMap = new Map(articles.map((article) => [article.id, article]));
 
@@ -136,11 +88,7 @@ export default async function MarketAnalysis() {
             <img
               src={LOGO_SRC}
               alt="myGaru"
-              style={{
-                height: 42,
-                width: "auto",
-                display: "block",
-              }}
+              style={{ height: 42, width: "auto", display: "block" }}
             />
           </a>
 
@@ -249,11 +197,7 @@ export default async function MarketAnalysis() {
                 <div style={{ padding: "6px 18px 8px" }}>
                   {group.articles.length === 0 ? (
                     <div
-                      style={{
-                        padding: "14px 8px",
-                        color: "#777",
-                        fontSize: 15,
-                      }}
+                      style={{ padding: "14px 8px", color: "#777", fontSize: 15 }}
                     >
                       Articles will be added later.
                     </div>
