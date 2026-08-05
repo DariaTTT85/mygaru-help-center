@@ -1,56 +1,167 @@
-import { Client } from "@notionhq/client";
+// lib/notion.ts
+// Единый слой работы с Notion для всего сайта.
+// Все страницы импортируют функции отсюда, а не пишут свои fetch.
 
-export const notion = new Client({
-  auth: process.env.NOTION_TOKEN,
-});
+const NOTION_TOKEN = process.env.NOTION_TOKEN;
+const DATABASE_ID = process.env.NOTION_DATABASE_ID;
+const NOTION_VERSION = "2022-06-28";
 
-const DATABASE_ID = process.env.NOTION_DATABASE_ID!;
+// Как часто перечитывать контент из Notion (в секундах).
+// 300 = раз в 5 минут. Заменяет прежний cache: "no-store",
+// который бил в Notion на каждый заход пользователя.
+const REVALIDATE_SECONDS = 300;
 
-export async function getArticles(category?: string) {
-  const response = await notion.databases.query({
-    database_id: DATABASE_ID,
-    filter: {
-      and: [
-        {
-          property: "Status",
-          select: {
-            equals: "Ready",
-          },
-        },
-        ...(category
-          ? [
-              {
-                property: "Category",
-                select: {
-                  equals: category,
-                },
-              },
-            ]
-          : []),
-      ],
+// Один тип статьи на весь проект (раньше он дублировался в каждом файле).
+export type Article = {
+  id: string;
+  title: string;
+  category: string;
+  shortAnswer: string;
+  slug: string;
+  order: number;
+  parentIds: string[];
+};
+
+// Блоки Notion бывают очень разной формы, поэтому оставляем any.
+export type NotionBlock = any;
+
+// Отличаем "контента нет" от "запрос упал":
+// null -> сбой Notion / нет токена (ошибка)
+// []   -> запрос прошёл, но статей нет (реально пусто)
+export type NotionResult<T> = T | null;
+
+/** Низкоуровневый запрос к Notion с общими заголовками и кэшированием. */
+async function notionFetch(
+  path: string,
+  options: RequestInit = {}
+): Promise<any | null> {
+  if (!NOTION_TOKEN) return null;
+
+  const response = await fetch(`https://api.notion.com/v1/${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${NOTION_TOKEN}`,
+      "Content-Type": "application/json",
+      "Notion-Version": NOTION_VERSION,
+      ...(options.headers || {}),
     },
-    sorts: [
-      {
-        property: "Order",
-        direction: "ascending",
-      },
-    ],
+    next: { revalidate: REVALIDATE_SECONDS },
   });
 
-  return response.results.map((page: any) => ({
-    id: page.id,
-    title: page.properties.Title.title[0]?.plain_text || "",
-    slug: page.properties.Slug.rich_text[0]?.plain_text || "",
-    shortAnswer:
-      page.properties["Short answer"].rich_text[0]?.plain_text || "",
-
-    content: page.properties.Content.rich_text
-      .map((t: any) => t.plain_text)
-      .join("\n"),
-  }));
+  if (!response.ok) return null;
+  return response.json();
 }
 
-export async function getArticleBySlug(slug: string) {
-  const articles = await getArticles();
-  return articles.find((a) => a.slug === slug);
+/** Превращает "сырую" страницу Notion в наш тип Article. */
+function mapArticle(page: any): Article {
+  return {
+    id: page.id,
+    title: page.properties?.Title?.title?.[0]?.plain_text || "Untitled",
+    category: page.properties?.Category?.select?.name || "",
+    shortAnswer:
+      page.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
+    slug: page.properties?.Slug?.rich_text?.[0]?.plain_text || "",
+    order: page.properties?.Order?.number || 999,
+    parentIds:
+      page.properties?.["Parent article"]?.relation?.map((r: any) => r.id) ||
+      [],
+  };
+}
+
+/**
+ * Список статей со статусом "Ready".
+ * Можно ограничить категорией: getArticles({ category: "Product Guide" }).
+ * null при сбое Notion, [] если статей действительно нет.
+ */
+export async function getArticles(
+  opts: { category?: string } = {}
+): Promise<NotionResult<Article[]>> {
+  if (!DATABASE_ID) return null;
+
+  const filters: any[] = [{ property: "Status", select: { equals: "Ready" } }];
+
+  if (opts.category) {
+    filters.push({ property: "Category", select: { equals: opts.category } });
+  }
+
+  const data = await notionFetch(`databases/${DATABASE_ID}/query`, {
+    method: "POST",
+    body: JSON.stringify({
+      filter: { and: filters },
+      sorts: [{ property: "Order", direction: "ascending" }],
+      page_size: 100,
+    }),
+  });
+
+  if (!data) return null;
+  if (!data.results) return [];
+
+  return data.results.map(mapArticle);
+}
+
+/** Одна статья по slug. null -> не найдена или сбой. */
+export async function getArticleBySlug(slug: string): Promise<Article | null> {
+  if (!DATABASE_ID) return null;
+
+  const decodedSlug = decodeURIComponent(slug || "").trim();
+  if (!decodedSlug) return null;
+
+  const data = await notionFetch(`databases/${DATABASE_ID}/query`, {
+    method: "POST",
+    body: JSON.stringify({
+      filter: {
+        and: [
+          { property: "Status", select: { equals: "Ready" } },
+          { property: "Slug", rich_text: { equals: decodedSlug } },
+        ],
+      },
+      page_size: 1,
+    }),
+  });
+
+  if (!data?.results?.length) return null;
+  return mapArticle(data.results[0]);
+}
+
+/** Все дочерние блоки одного блока/страницы (с учётом пагинации Notion). */
+async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
+  let blocks: NotionBlock[] = [];
+  let cursor: string | undefined = undefined;
+  let hasMore = true;
+
+  while (hasMore) {
+    const path = cursor
+      ? `blocks/${blockId}/children?page_size=100&start_cursor=${cursor}`
+      : `blocks/${blockId}/children?page_size=100`;
+
+    const data = await notionFetch(path);
+    if (!data) return blocks;
+
+    blocks = [...blocks, ...(data.results || [])];
+    hasMore = data.has_more || false;
+    cursor = data.next_cursor || undefined;
+  }
+
+  return blocks;
+}
+
+/** Все блоки страницы вместе с вложенными детьми (рекурсивно). */
+export async function getBlocksWithChildren(
+  pageId: string
+): Promise<NotionBlock[]> {
+  const rootBlocks = await getChildBlocks(pageId);
+
+  async function attachChildren(blocks: NotionBlock[]): Promise<NotionBlock[]> {
+    return Promise.all(
+      blocks.map(async (block) => {
+        if (block.has_children) {
+          const children = await getChildBlocks(block.id);
+          block.children = await attachChildren(children);
+        }
+        return block;
+      })
+    );
+  }
+
+  return attachChildren(rootBlocks);
 }
