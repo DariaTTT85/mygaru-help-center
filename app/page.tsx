@@ -1,12 +1,9 @@
-type Article = {
-  title: string;
-  category: string;
-};
+import { getArticles, type Article } from "../lib/notion";
 
 const LOGO_SRC = "/myGaru_logo_black.png";
 const BRAND_GREEN = "#44cfbd";
 
-const categoryMeta: Record<
+const categoryMeta: Record
   string,
   {
     label: string;
@@ -45,40 +42,6 @@ const categoryMeta: Record<
   },
 };
 
-async function getArticles(): Promise<Article[]> {
-  const token = process.env.NOTION_TOKEN;
-  const databaseId = process.env.NOTION_DATABASE_ID;
-
-  if (!token || !databaseId) return [];
-
-  const response = await fetch(
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Notion-Version": "2022-06-28",
-      },
-      body: JSON.stringify({
-        filter: {
-          property: "Status",
-          select: { equals: "Ready" },
-        },
-      }),
-      cache: "no-store",
-    }
-  );
-
-  const data = await response.json();
-  if (!response.ok) return [];
-
-  return data.results.map((item: any) => ({
-    title: item.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    category: item.properties?.Category?.select?.name || "Uncategorised",
-  }));
-}
-
 function CardIcon({
   type,
 }: {
@@ -86,11 +49,7 @@ function CardIcon({
 }) {
   if (type === "logo") {
     return (
-      <img
-        src="/mygaru-icon.png"
-        alt=""
-        style={{ width: 30, height: 30 }}
-      />
+      <img src="/mygaru-icon.png" alt="" style={{ width: 30, height: 30 }} />
     );
   }
 
@@ -149,7 +108,8 @@ function SearchIcon() {
 }
 
 export default async function HomePage() {
-  const articles = await getArticles();
+  // getArticles может вернуть null при сбое Notion — тогда считаем от пустого списка.
+  const articles: Article[] = (await getArticles()) ?? [];
 
   const groupedArticles = articles.reduce<Record<string, Article[]>>(
     (acc, article) => {
@@ -211,15 +171,11 @@ export default async function HomePage() {
             <img
               src={LOGO_SRC}
               alt="myGaru"
-              style={{
-                height: 42,
-                width: "auto",
-                display: "block",
-              }}
+              style={{ height: 42, width: "auto", display: "block" }}
             />
           </a>
 
-          <a
+          
             href="https://mygaru.com"
             target="_blank"
             rel="noopener noreferrer"
@@ -283,7 +239,7 @@ export default async function HomePage() {
             const count = groupedArticles[category]?.length || 0;
 
             return (
-              <a
+              
                 key={category}
                 href={meta.href}
                 className="home-card"
