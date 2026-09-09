@@ -124,7 +124,7 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
 }
 
 /** Все дочерние блоки одного блока/страницы (с учётом пагинации Notion). */
-async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
+export async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
   let blocks: NotionBlock[] = [];
   let cursor: string | undefined = undefined;
   let hasMore = true;
@@ -135,7 +135,7 @@ async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
       : `blocks/${blockId}/children?page_size=100`;
 
     const data = await notionFetch(path);
-    if (!data) return blocks;
+    if (!data) throw new Error("Unable to load document content from Notion");
 
     blocks = [...blocks, ...(data.results || [])];
     hasMore = data.has_more || false;
@@ -164,4 +164,15 @@ export async function getBlocksWithChildren(
   }
 
   return attachChildren(rootBlocks);
+}
+
+/** Expand only the selected section; cap concurrent child requests. */
+export async function expandBlocks(blocks: NotionBlock[]): Promise<NotionBlock[]> {
+  const result: NotionBlock[] = [];
+  for (const block of blocks) {
+    result.push(block.has_children
+      ? { ...block, children: await expandBlocks(await getChildBlocks(block.id)) }
+      : block);
+  }
+  return result;
 }
