@@ -52,12 +52,18 @@ async function notionFetch(
   return response.json();
 }
 
+// Accept the capitalization used in the user's Notion category names.
+function canonicalCategory(name: string): string {
+  const categories = ["Product Guide", "Market Analysis", "Integrations Guide", "Legal Documents"];
+  return categories.find(category => category.toLowerCase() === name.trim().toLowerCase()) || name;
+}
+
 /** Превращает "сырую" страницу Notion в наш тип Article. */
 function mapArticle(page: any): Article {
   return {
     id: page.id,
     title: page.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    category: page.properties?.Category?.select?.name || "",
+    category: canonicalCategory(page.properties?.Category?.select?.name || ""),
     shortAnswer:
       page.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
     slug: page.properties?.Slug?.rich_text?.[0]?.plain_text || "",
@@ -81,7 +87,9 @@ export async function getArticles(
   const filters: any[] = [{ property: "Status", select: { equals: "Ready" } }];
 
   if (opts.category) {
-    filters.push({ property: "Category", select: { equals: opts.category } });
+    const category = canonicalCategory(opts.category);
+    const aliases = category === "Legal Documents" ? ["Legal Documents", "Legal documents"] : [category];
+    filters.push({ or: aliases.map(name => ({ property: "Category", select: { equals: name } })) });
   }
 
   const data = await notionFetch(`databases/${DATABASE_ID}/query`, {
