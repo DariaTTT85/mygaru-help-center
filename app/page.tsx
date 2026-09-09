@@ -3,7 +3,7 @@ import { getArticles, type Article } from "../lib/notion";
 const LOGO_SRC = "/myGaru_logo_black.png";
 const BRAND_GREEN = "#44cfbd";
 
-const categoryMeta: Record
+const categoryMeta: Record<
   string,
   {
     label: string;
@@ -175,7 +175,7 @@ export default async function HomePage() {
             />
           </a>
 
-          
+          <a
             href="https://mygaru.com"
             target="_blank"
             rel="noopener noreferrer"
@@ -239,7 +239,7 @@ export default async function HomePage() {
             const count = groupedArticles[category]?.length || 0;
 
             return (
-              
+              <a
                 key={category}
                 href={meta.href}
                 className="home-card"

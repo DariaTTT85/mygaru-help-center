@@ -1,177 +1,15 @@
 import type { ReactNode } from "react";
 
-type Article = {
-  id: string;
-  title: string;
-  category: string;
-  shortAnswer: string;
-  slug: string;
-  order: number;
-  parentIds: string[];
-};
-
-type NotionBlock = any;
-
+import { notFound } from "next/navigation";
+import { getArticleBySlug as getArticle, getArticles, getChildBlocks, expandBlocks, type Article, type NotionBlock } from "../../../lib/notion";
+import { splitSections, sectionHref } from "../../../lib/sections";
 const LOGO_SRC = "/myGaru_logo_black.png";
-
-function getPlainText(richText: any[] = []) {
-  return richText.map((text) => text.plain_text).join("");
-}
-
-async function notionRequest(url: string, options: RequestInit = {}) {
-  const token = process.env.NOTION_TOKEN;
-
-  if (!token) {
-    throw new Error("Missing NOTION_TOKEN");
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "Notion-Version": "2022-06-28",
-      ...(options.headers || {}),
-    },
-    cache: "no-store",
-  });
-
-  if (!response.ok) return null;
-
-  return response.json();
-}
-
-async function getArticle(slug: string): Promise<Article | null> {
-  const databaseId = process.env.NOTION_DATABASE_ID;
-  const decodedSlug = decodeURIComponent(slug || "").trim();
-
-  if (!databaseId || !decodedSlug) return null;
-
-  const data = await notionRequest(
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        filter: {
-          and: [
-            { property: "Status", select: { equals: "Ready" } },
-            { property: "Slug", rich_text: { equals: decodedSlug } },
-          ],
-        },
-        page_size: 1,
-      }),
-    }
-  );
-
-  if (!data?.results?.length) return null;
-
-  const page = data.results[0];
-
-  return {
-    id: page.id,
-    title: page.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    category: page.properties?.Category?.select?.name || "",
-    shortAnswer:
-      page.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
-    slug: page.properties?.Slug?.rich_text?.[0]?.plain_text || "",
-    order: page.properties?.Order?.number || 999,
-    parentIds:
-      page.properties?.["Parent article"]?.relation?.map((r: any) => r.id) ||
-      [],
-  };
-}
-
+function getPlainText(richText: any[] = []) { return richText.map(t => t.plain_text ?? t.text?.content ?? "").join(""); }
 async function getArticlesForNavigation(article: Article): Promise<Article[]> {
-  const databaseId = process.env.NOTION_DATABASE_ID;
-
-  if (!databaseId || !article.category) return [];
-
-  const data = await notionRequest(
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        filter: {
-          and: [
-            { property: "Status", select: { equals: "Ready" } },
-            { property: "Category", select: { equals: article.category } },
-          ],
-        },
-        sorts: [{ property: "Order", direction: "ascending" }],
-        page_size: 100,
-      }),
-    }
-  );
-
-  if (!data?.results?.length) return [];
-
-  const allArticles: Article[] = data.results.map((page: any) => ({
-    id: page.id,
-    title: page.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    category: page.properties?.Category?.select?.name || "",
-    shortAnswer:
-      page.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
-    slug: page.properties?.Slug?.rich_text?.[0]?.plain_text || "",
-    order: page.properties?.Order?.number || 999,
-    parentIds:
-      page.properties?.["Parent article"]?.relation?.map((r: any) => r.id) ||
-      [],
-  }));
-
-  if (article.category === "Market Analysis" && article.parentIds.length === 1) {
-    const parentId = article.parentIds[0];
-
-    return allArticles
-      .filter((item) => item.parentIds.includes(parentId))
-      .filter((item) => Boolean(item.slug))
-      .sort((a, b) => a.order - b.order);
-  }
-
-  return allArticles
-    .filter((item) => Boolean(item.slug))
-    .filter((item) => item.parentIds.length === article.parentIds.length)
-    .sort((a, b) => a.order - b.order);
-}
-
-async function getChildBlocks(blockId: string): Promise<NotionBlock[]> {
-  let blocks: NotionBlock[] = [];
-  let cursor: string | undefined = undefined;
-  let hasMore = true;
-
-  while (hasMore) {
-    const url = cursor
-      ? `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100&start_cursor=${cursor}`
-      : `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`;
-
-    const data = await notionRequest(url);
-
-    if (!data) return blocks;
-
-    blocks = [...blocks, ...(data.results || [])];
-    hasMore = data.has_more || false;
-    cursor = data.next_cursor || undefined;
-  }
-
-  return blocks;
-}
-
-async function getBlocksWithChildren(pageId: string): Promise<NotionBlock[]> {
-  const rootBlocks = await getChildBlocks(pageId);
-
-  async function attachChildren(blocks: NotionBlock[]): Promise<NotionBlock[]> {
-    return Promise.all(
-      blocks.map(async (block) => {
-        if (block.has_children) {
-          const children = await getChildBlocks(block.id);
-          block.children = await attachChildren(children);
-        }
-
-        return block;
-      })
-    );
-  }
-
-  return attachChildren(rootBlocks);
+  const all = (await getArticles({ category: article.category })) ?? [];
+  return all.filter(item => item.slug && (article.parentIds.length === 1
+    ? item.parentIds.includes(article.parentIds[0])
+    : item.parentIds.length === article.parentIds.length));
 }
 
 function renderInlineText(richText: any[] = []) {
@@ -404,25 +242,34 @@ function renderBlock(block: NotionBlock, level = 0) {
 
   if (type === "heading_1") {
     return (
+      <>
       <h1 style={{ fontSize: 34, margin: "42px 0 18px", lineHeight: 1.2 }}>
         {renderInlineText(value.rich_text)}
       </h1>
+      {block.children?.length ? renderNestedBlocks(block.children, level + 1) : null}
+      </>
     );
   }
 
   if (type === "heading_2") {
     return (
+      <>
       <h2 style={{ fontSize: 27, margin: "36px 0 16px", lineHeight: 1.25 }}>
         {renderInlineText(value.rich_text)}
       </h2>
+      {block.children?.length ? renderNestedBlocks(block.children, level + 1) : null}
+      </>
     );
   }
 
   if (type === "heading_3") {
     return (
+      <>
       <h3 style={{ fontSize: 22, margin: "30px 0 14px", lineHeight: 1.3 }}>
         {renderInlineText(value.rich_text)}
       </h3>
+      {block.children?.length ? renderNestedBlocks(block.children, level + 1) : null}
+      </>
     );
   }
 
@@ -475,6 +322,7 @@ function renderBlock(block: NotionBlock, level = 0) {
       >
         <img
           src={src}
+          loading="lazy"
           alt={caption || ""}
           style={{
             maxWidth: "100%",
@@ -683,34 +531,21 @@ function renderBlock(block: NotionBlock, level = 0) {
 }
 
 export default async function ArticlePage({
-  params,
+  params, searchParams,
 }: {
   params: { slug: string };
+  searchParams?: { section?: string };
 }) {
   const article = await getArticle(params.slug);
 
-  if (!article) {
-    return (
-      <main
-        style={{
-          fontFamily: "Ubuntu, Arial, sans-serif",
-          background: "#f4f3ef",
-          minHeight: "100vh",
-          padding: 40,
-        }}
-      >
-        <h1>Article not found</h1>
-        <p style={{ color: "#555", fontSize: 16 }}>
-          Please check that the Notion Slug field exactly matches the URL.
-        </p>
-        <a href="/" style={{ color: "#168f82" }}>
-          Back to Help Center
-        </a>
-      </main>
-    );
-  }
-
-  const blocks = await getBlocksWithChildren(article.id);
+  if (!article) notFound();
+  const sections = splitSections(await getChildBlocks(article.id));
+  const selected = searchParams?.section
+    ? sections.find(section => section.id === searchParams.section)
+    : sections[0];
+  if (searchParams?.section && !selected) notFound();
+  const blocks = selected ? await expandBlocks(selected.blocks) : [];
+  const sectionIndex = sections.findIndex(section => section.id === selected?.id);
   const navArticles = await getArticlesForNavigation(article);
 
   const currentIndex = navArticles.findIndex((item) => item.id === article.id);
@@ -917,7 +752,23 @@ export default async function ArticlePage({
             boxShadow: "0 18px 46px rgba(0,0,0,0.11)",
           }}
         >
-          <div>{renderNestedBlocks(blocks)}</div>
+          {sections.length > 1 && (
+            <nav aria-label="Document sections" style={{ marginBottom: 32, borderBottom: "1px solid #ddd", paddingBottom: 24 }}>
+              <h2 style={{ fontSize: 18 }}>In this document</h2>
+              <ul style={{ paddingLeft: 22, lineHeight: 1.8 }}>
+                {sections.map(section => <li key={section.id}>
+                  <a href={sectionHref(article.slug, section.id)} aria-current={section.id === selected?.id ? "page" : undefined}
+                    style={{ color: "#087f75", fontWeight: section.id === selected?.id ? 700 : 400 }}>{section.title}</a>
+                </li>)}
+              </ul>
+            </nav>
+          )}
+          {selected?.id === "introduction" && <h2>Introduction</h2>}
+          <div>{blocks.length ? renderNestedBlocks(blocks) : <p>No content yet.</p>}</div>
+          {sections.length > 1 && <nav aria-label="Section navigation" style={{ display: "flex", justifyContent: "space-between", gap: 24, marginTop: 32 }}>
+            <span>{sectionIndex > 0 && <a style={{ color: "#087f75" }} href={sectionHref(article.slug, sections[sectionIndex - 1].id)}>← {sections[sectionIndex - 1].title}</a>}</span>
+            <span>{sectionIndex < sections.length - 1 && <a style={{ color: "#087f75" }} href={sectionHref(article.slug, sections[sectionIndex + 1].id)}>{sections[sectionIndex + 1].title} →</a>}</span>
+          </nav>}
 
           <div
             style={{

@@ -1,54 +1,10 @@
-type Article = {
-  title: string;
-  shortAnswer: string;
-  slug: string;
-  order: number;
-};
-
+import { Suspense } from "react";
+import { getArticles } from "../../lib/notion";
+import DocumentSections from "../document-sections";
 const LOGO_SRC = "/myGaru_logo_black.png";
 
-async function getProductGuideArticles(): Promise<Article[]> {
-  const token = process.env.NOTION_TOKEN;
-  const databaseId = process.env.NOTION_DATABASE_ID;
-
-  if (!token || !databaseId) return [];
-
-  const response = await fetch(
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Notion-Version": "2022-06-28",
-      },
-      body: JSON.stringify({
-        filter: {
-          and: [
-            { property: "Status", select: { equals: "Ready" } },
-            { property: "Category", select: { equals: "Product Guide" } },
-          ],
-        },
-        sorts: [{ property: "Order", direction: "ascending" }],
-      }),
-      cache: "no-store",
-    }
-  );
-
-  const data = await response.json();
-  if (!response.ok) return [];
-
-  return data.results.map((item: any) => ({
-    title: item.properties?.Title?.title?.[0]?.plain_text || "Untitled",
-    shortAnswer:
-      item.properties?.["Short answer"]?.rich_text?.[0]?.plain_text || "",
-    slug: item.properties?.Slug?.rich_text?.[0]?.plain_text || "",
-    order: item.properties?.Order?.number || 999,
-  }));
-}
-
 export default async function ProductGuide() {
-  const articles = await getProductGuideArticles();
+  const articles = (await getArticles({ category: "Product Guide" })) ?? [];
 
   return (
     <main
@@ -192,69 +148,13 @@ export default async function ProductGuide() {
               No documents yet.
             </div>
           ) : (
-            articles.map((article, index) => {
-              const isValid = Boolean(article.slug);
-
-              return (
-                <a
-                  key={article.slug || index}
-                  href={isValid ? `/articles/${article.slug}` : "#"}
-                  className="document-row"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 20,
-                    padding: "15px 14px",
-                    borderTop: index === 0 ? "none" : "1px solid #eeeeee",
-                    textDecoration: "none",
-                    color: "#252525",
-                    pointerEvents: isValid ? "auto" : "none",
-                    opacity: isValid ? 1 : 0.5,
-                    borderRadius: 12,
-                  }}
-                >
-                  <div>
-                    <div
-                      className="document-title"
-                      style={{
-                        fontSize: 19,
-                        fontWeight: 500,
-                        lineHeight: 1.35,
-                        letterSpacing: "-0.1px",
-                      }}
-                    >
-                      {article.title}
-                    </div>
-
-                    {article.shortAnswer && (
-                      <div
-                        style={{
-                          color: "#6a6a6a",
-                          fontSize: 13.5,
-                          lineHeight: 1.4,
-                          marginTop: 3,
-                        }}
-                      >
-                        {article.shortAnswer}
-                      </div>
-                    )}
-                  </div>
-
-                  <span
-                    className="document-arrow"
-                    style={{
-                      color: "#008f82",
-                      fontSize: 24,
-                      lineHeight: 1,
-                      flexShrink: 0,
-                    }}
-                  >
-                    ›
-                  </span>
-                </a>
-              );
-            })
+            articles.map(article => (
+              <div key={article.id} style={{ padding: "20px 14px", borderBottom: "1px solid #eee" }}>
+                <h2 style={{ fontSize: 23, margin: "0 0 10px" }}><a style={{ color: "#087f75", textDecoration: "none" }} href={`/articles/${encodeURIComponent(article.slug)}`}>{article.title}</a></h2>
+                {article.shortAnswer && <p>{article.shortAnswer}</p>}
+                {article.slug && <Suspense fallback={<p>Loading sections…</p>}><DocumentSections id={article.id} slug={article.slug} /></Suspense>}
+              </div>
+            ))
           )}
         </div>
       </section>

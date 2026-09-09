@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import DocumentSections from "../document-sections";
 import { getArticles, type Article } from "../../lib/notion";
 
 const LOGO_SRC = "/myGaru_logo_black.png";
@@ -199,7 +201,7 @@ export default async function MarketAnalysis() {
                     <div
                       style={{ padding: "14px 8px", color: "#777", fontSize: 15 }}
                     >
-                      Articles will be added later.
+                      {group.parent.slug ? <Suspense fallback={<p>Loading sections…</p>}><DocumentSections id={group.parent.id} slug={group.parent.slug} /></Suspense> : "Articles will be added later."}
                     </div>
                   ) : (
                     group.articles.map((article, index) => {
