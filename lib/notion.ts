@@ -84,27 +84,30 @@ export async function getArticles(
 ): Promise<NotionResult<Article[]>> {
   if (!DATABASE_ID) return null;
 
-  const filters: any[] = [{ property: "Status", select: { equals: "Ready" } }];
-
-  if (opts.category) {
-    const category = canonicalCategory(opts.category);
-    const aliases = category === "Legal Documents" ? ["Legal Documents", "Legal documents"] : [category];
-    filters.push({ or: aliases.map(name => ({ property: "Category", select: { equals: name } })) });
-  }
-
-  const data = await notionFetch(`databases/${DATABASE_ID}/query`, {
-    method: "POST",
-    body: JSON.stringify({
-      filter: { and: filters },
-      sorts: [{ property: "Order", direction: "ascending" }],
-      page_size: 100,
-    }),
-  });
-
-  if (!data) return null;
-  if (!data.results) return [];
-
-  return data.results.map(mapArticle);
+  // Every category and the home count share the same Notion request/cache entry.
+  // Normalize names before filtering so casing and trailing spaces cannot hide records.
+  const articles: Article[] = [];
+  let cursor: string | undefined;
+  do {
+    const data = await notionFetch(`databases/${DATABASE_ID}/query`, {
+      method: "POST",
+      body: JSON.stringify({
+        filter: { property: "Status", select: { equals: "Ready" } },
+        sorts: [{ property: "Order", direction: "ascending" }],
+        page_size: 100,
+        ...(cursor ? { start_cursor: cursor } : {}),
+      }),
+    });
+    if (!data || !Array.isArray(data.results)) {
+      throw new Error("Unable to load the document list from Notion");
+    }
+    articles.push(...data.results.map(mapArticle));
+    cursor = data.has_more ? data.next_cursor : undefined;
+    if (data.has_more && !cursor) throw new Error("Incomplete Notion document list");
+  } while (cursor);
+  return opts.category
+    ? articles.filter(article => article.category === canonicalCategory(opts.category!))
+    : articles;
 }
 
 /** Одна статья по slug. null -> не найдена или сбой. */
