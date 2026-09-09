@@ -1,6 +1,5 @@
-import { Suspense } from "react";
 import { getArticles } from "../../lib/notion";
-import DocumentSections from "../document-sections";
+import DocumentList from "../document-list";
 const LOGO_SRC = "/myGaru_logo_black.png";
 
 export default async function ProductGuide() {
@@ -120,43 +119,8 @@ export default async function ProductGuide() {
         </div>
       </div>
 
-      <section
-        style={{
-          maxWidth: 860,
-          margin: "-48px auto 0",
-          padding: "0 24px 80px",
-        }}
-      >
-        <div
-          style={{
-            background: "white",
-            border: "1px solid #dedbd2",
-            borderRadius: 24,
-            overflow: "hidden",
-            boxShadow: "0 14px 36px rgba(0,0,0,0.08)",
-            padding: "8px 18px",
-          }}
-        >
-          {articles.length === 0 ? (
-            <div
-              style={{
-                padding: "18px 14px",
-                color: "#777",
-                fontSize: 15,
-              }}
-            >
-              No documents yet.
-            </div>
-          ) : (
-            articles.map(article => (
-              <div key={article.id} style={{ padding: "20px 14px", borderBottom: "1px solid #eee" }}>
-                <h2 style={{ fontSize: 23, margin: "0 0 10px" }}><a style={{ color: "#087f75", textDecoration: "none" }} href={`/articles/${encodeURIComponent(article.slug)}`}>{article.title}</a></h2>
-                {article.shortAnswer && <p>{article.shortAnswer}</p>}
-                {article.slug && <Suspense fallback={<p>Loading sections…</p>}><DocumentSections id={article.id} slug={article.slug} /></Suspense>}
-              </div>
-            ))
-          )}
-        </div>
+      <section style={{ maxWidth: 860, margin: "-48px auto 0", padding: "0 24px 80px" }}>
+        <DocumentList articles={articles} />
       </section>
     </main>
   );
